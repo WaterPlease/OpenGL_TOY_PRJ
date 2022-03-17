@@ -1,0 +1,75 @@
+#version 430 core
+
+layout (quads, equal_spacing, ccw) in;
+
+uniform sampler2D texture_height;
+
+uniform mat4 view;
+uniform mat4 projection;
+uniform float max_height;
+uniform int numAxisPatches;
+uniform float patchSize;
+
+uniform vec3 lightDir;
+uniform vec3 camPos;
+
+out FGINFO
+{
+    vec2 uv;
+    vec3 TBNViewDir;
+    vec3 TBNLightDir;
+    vec3 normal;
+    vec3 pos;
+}fginfo;
+   
+
+
+float EPS = 0.001;
+
+vec2 getUV(vec3 pos,float minVal,float maxVal){
+    float LandAxisLen = maxVal-minVal;
+    float u = (pos.x-minVal)/LandAxisLen;
+    float v = (pos.z-minVal)/LandAxisLen;
+    return vec2(u,v);
+}
+
+float getHeight(vec2 uv){
+    return max_height * (texture(texture_height,uv).x
+                        +texture(texture_height,uv-vec2(-EPS,EPS)).x
+                        +texture(texture_height,uv+vec2(-EPS,EPS)).x
+                        +texture(texture_height,uv-vec2(EPS,EPS)).x
+                        +texture(texture_height,uv+vec2(EPS,EPS)).x
+                        +texture(texture_height,uv-vec2(EPS,0.0)).x
+                        +texture(texture_height,uv+vec2(EPS,0.0)).x
+                        +texture(texture_height,uv-vec2(0.0,EPS)).x
+                        +texture(texture_height,uv+vec2(0.0,EPS)).x)/9.0;
+}
+
+void main(void){
+    float minVal = -2*patchSize*(numAxisPatches/2);
+    float maxVal = 2*patchSize*(numAxisPatches-1-(numAxisPatches/2));
+
+    vec4 v0 = mix( gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
+    vec4 v1 = mix( gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+    vec4 tessPos =  mix( v0, v1, gl_TessCoord.y);
+    fginfo.uv = getUV(tessPos.xyz,minVal,maxVal);
+    tessPos = tessPos + vec4(0,getHeight(fginfo.uv),0,0);
+
+    vec3 dx = vec3(EPS,0,0);
+    vec3 dz = vec3(0,0,EPS);
+
+    vec2 uv_dx = getUV(tessPos.xyz+dx,minVal,maxVal);
+    vec2 uv_dz = getUV(tessPos.xyz+dz,minVal,maxVal);
+
+    vec3 tan   = normalize((dx + (getHeight(uv_dx)-tessPos.y) * vec3(0,1,0)));
+    vec3 bitan = normalize((dz + (getHeight(uv_dz)-tessPos.y) * vec3(0,1,0)));
+    vec3 normal = normalize(cross(bitan,tan));
+    fginfo.pos = tessPos.xyz;
+    fginfo.normal = normal;
+
+    mat3 TBN = transpose(mat3(tan,bitan,normal));
+    fginfo.TBNLightDir = TBN * lightDir;
+    fginfo.TBNViewDir = TBN * (camPos - tessPos.xyz);
+
+    gl_Position = projection * view * tessPos;
+}

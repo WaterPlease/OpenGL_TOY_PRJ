@@ -1,0 +1,45 @@
+#version 430 core
+
+uniform int tessLevel;
+
+layout (vertices = 4) out;
+
+uniform vec3 camPos;
+
+float lod1 = 120.0;
+float lod2 = 60.0;
+
+void main(void){
+	int lod1Level = max(1,tessLevel/4);
+	int lod2Level = max(1,tessLevel/2);
+	if(gl_InvocationID == 0){
+		vec2 camPosPlane = camPos.xz;
+		float d0 = distance(gl_in[0].gl_Position.xz,camPosPlane);
+		float d1 = distance(gl_in[1].gl_Position.xz,camPosPlane);
+		float d2 = distance(gl_in[2].gl_Position.xz,camPosPlane);
+		float d3 = distance(gl_in[3].gl_Position.xz,camPosPlane);
+		if(d0>lod1 ||d1>lod1 ||d2>lod1 ||d3>lod1){
+			gl_TessLevelInner[0] = lod1Level;
+			gl_TessLevelInner[1] = lod1Level;
+			gl_TessLevelOuter[0] = lod1Level;
+			gl_TessLevelOuter[1] = lod1Level;
+			gl_TessLevelOuter[2] = lod1Level;
+			gl_TessLevelOuter[3] = lod1Level;
+		}else if(d0>lod2 ||d1>lod2 ||d2>lod2 ||d3>lod2){
+			gl_TessLevelInner[0] = lod2Level;
+			gl_TessLevelInner[1] = lod2Level;
+			gl_TessLevelOuter[0] = lod2Level;
+			gl_TessLevelOuter[1] = lod2Level;
+			gl_TessLevelOuter[2] = lod2Level;
+			gl_TessLevelOuter[3] = lod2Level;
+		}else{
+			gl_TessLevelInner[0] = tessLevel;
+			gl_TessLevelInner[1] = tessLevel;
+			gl_TessLevelOuter[0] = tessLevel;
+			gl_TessLevelOuter[1] = tessLevel;
+			gl_TessLevelOuter[2] = tessLevel;
+			gl_TessLevelOuter[3] = tessLevel;
+		}
+	}
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}

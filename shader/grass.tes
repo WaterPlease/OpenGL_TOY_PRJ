@@ -1,0 +1,43 @@
+#version 430 core
+
+layout (quads, equal_spacing, ccw) in;
+
+uniform sampler2D texture_height;
+
+uniform float max_height;
+uniform int numAxisPatches;
+uniform float patchSize;
+
+float EPS = 0.001;
+
+vec2 getUV(vec3 pos,float minVal,float maxVal){
+    float LandAxisLen = maxVal-minVal;
+    float u = (pos.x-minVal)/LandAxisLen;
+    float v = (pos.z-minVal)/LandAxisLen;
+    return vec2(u,v);
+}
+float getHeight(vec2 uv){
+    return max_height * (texture(texture_height,uv).x
+                        +texture(texture_height,uv-vec2(-EPS,EPS)).x
+                        +texture(texture_height,uv+vec2(-EPS,EPS)).x
+                        +texture(texture_height,uv-vec2(EPS,EPS)).x
+                        +texture(texture_height,uv+vec2(EPS,EPS)).x
+                        +texture(texture_height,uv-vec2(EPS,0.0)).x
+                        +texture(texture_height,uv+vec2(EPS,0.0)).x
+                        +texture(texture_height,uv-vec2(0.0,EPS)).x
+                        +texture(texture_height,uv+vec2(0.0,EPS)).x)/9.0;
+    return max_height * texture(texture_height,uv).x;
+}
+
+void main(void){
+    float minVal = -2*patchSize*(numAxisPatches/2);
+    float maxVal = 2*patchSize*(numAxisPatches-1-(numAxisPatches/2));
+
+    vec4 v0 = mix( gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
+    vec4 v1 = mix( gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+    vec4 tessPos =  mix( v0, v1, gl_TessCoord.y);
+    vec2 uv = getUV(tessPos.xyz,minVal,maxVal);
+    tessPos = tessPos + vec4(0,getHeight(uv),0,0);
+
+    gl_Position = tessPos;
+}
