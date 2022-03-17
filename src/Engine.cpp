@@ -68,7 +68,7 @@ void Engine::loop() {
                 clock_t clk = clock();
                 clk = ((clk % 10800));
                 float deg = glm::radians(((float)clk) * 0.033f);
-                terrain.lightDir = glm::normalize(glm::vec3(std::sin(deg), (std::cos(deg)+1.0)/2.0, std::cos(deg)));
+                terrain.lightDir = glm::normalize(glm::vec3(std::sin(deg)* std::sin(deg), std::cos(deg), std::sin(deg)*std::cos(deg)));
                 terrain.draw();
             }
         }

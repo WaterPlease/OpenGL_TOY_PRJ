@@ -16,6 +16,9 @@
     <Filter Include="리소스 파일\Shader">
       <UniqueIdentifier>{74a5be11-9fe6-4cee-9765-c25f442c85f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Doc">
+      <UniqueIdentifier>{be20421e-99b0-4585-a703-095763e15cea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -123,6 +126,9 @@
     </None>
     <None Include="shader\grass.vs">
       <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="Doc\TODO.md">
+      <Filter>Doc</Filter>
     </None>
   </ItemGroup>
 </Project>

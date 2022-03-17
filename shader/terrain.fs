@@ -15,6 +15,7 @@ uniform sampler2D texture_spec_rock;
 uniform sampler2D texture_ao_grass;
 uniform sampler2D texture_ao_rock;
 
+uniform vec3 lightDir;
 uniform float max_height;
 uniform float Kd;
 uniform float Ks;
@@ -39,11 +40,11 @@ float directional_lighting(sampler2D normal_map,sampler2D spec_map,sampler2D ao_
     float spec = texture(spec_map,uvFactor*fginfo.uv).r;
     normal = normalize(normal * 2.0 - 1.0);
     
-    float ambient = 0.1;//max(1.0-kd-ks,0.0);
+    float ambient = 0.07;//max(1.0-kd-ks,0.0);
     float diffuse = max(dot(normal, fginfo.TBNLightDir),0.0) * kd;
     
     vec3 H = normalize(fginfo.TBNLightDir + fginfo.TBNViewDir);
-    float specular = pow(max(dot(normal,H),0),ns) * spec;
+    float specular = pow(max(dot(normal,H),0),ns) * spec * max(dot(lightDir,vec3(0.0,1.0,0.0)),0);
 
     return (ambient + diffuse + specular)*texture(ao_map,uvFactor*fginfo.uv).r;
 }

@@ -46,6 +46,7 @@
     <ClInclude Include="includes\Texture.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Doc\TODO.md" />
     <None Include="shader\default.fs" />
     <None Include="shader\default.vs" />
     <None Include="shader\grass.fs" />
