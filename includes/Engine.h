@@ -19,7 +19,7 @@ class Engine {
 	GLFWwindow* window;
 	vector<BaseObject*> objs;
 public:
-	Engine(const char* title);
+	Engine(const char* title, int width, int height);
 	void loop();
 };
 

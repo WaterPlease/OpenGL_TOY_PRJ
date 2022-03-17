@@ -2,7 +2,7 @@
 
 bool wireMode = false;
 
-Renderer::Renderer(const char* title) {
+Renderer::Renderer(const char* title, int width, int height):screenRes(width,height) {
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -36,10 +36,10 @@ Renderer::Renderer(const char* title) {
 
     mainCam = new Camera();
     mainCam->aspect = (float)(this->screenRes.x) / (float)(this->screenRes.y);
-    mainCam->fovy = glm::radians(71.0f);
+    mainCam->fovy = 45.0f;// glm::radians(71.0f);
     mainCam->zNear = 0.1f;
     mainCam->zFar = 1000.0f;
     mainCam->pos = glm::vec3(6.0f, 6.0f, 6.0f);
     mainCam->updateRot(glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(-1.0f, 2.0f, -1.0f));
-
+    mainCam->calcViewCone();
 }

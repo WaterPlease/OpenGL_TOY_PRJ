@@ -105,7 +105,7 @@ public:
 
 	GLuint VAO;
 	GLuint grass_VAO;
-	GLfloat grass_factor = 1.0f;
+	GLfloat grass_factor = 1.5f;
 	GLfloat max_height = 15.0;
 	TerrainObject(GLfloat _patchSize, GLfloat landSize, Shader* _t_shader,Shader* _g_shader) :BaseObject(ObjClass::Terrain)
 		,terrain_shader(_t_shader), grass_shader(_g_shader) {
@@ -158,17 +158,21 @@ public:
 		glm::mat4 view = mainCam->getViewMat();
 
 		grass_shader->use();
+		if (parameter_changed) {
+			grass_shader->setInt("tessLevel", TESS_LEVEL + 2);
+			grass_shader->setInt("numAxisPatches", grass_numAxisPatch);
+			grass_shader->setFloat("patchSize", grass_patchSize);
+			grass_shader->setFloat("grassWidth", 0.05f);
+			grass_shader->setFloat("grassLean", 0.8f);
+			grass_shader->setFloat("grassHeight", 0.25f);
+			grass_shader->setFloat("max_height", max_height);
+			grass_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
+		}
 		grass_shader->setMat4("projection", projection);
 		grass_shader->setMat4("view", view);
-		grass_shader->setInt("tessLevel", TESS_LEVEL+2);
-		grass_shader->setInt("numAxisPatches", grass_numAxisPatch);
-		grass_shader->setFloat("patchSize", grass_patchSize);
 		grass_shader->setVec3("camPos", mainCam->pos);
+		grass_shader->setVec3("camFront", mainCam->front);
 		grass_shader->setVec3("lightDir", lightDir);
-		grass_shader->setFloat("grassWidth", 0.05f);
-		grass_shader->setFloat("grassLean", 0.1f);
-		grass_shader->setFloat("grassHeight", 0.25f);
-		grass_shader->setFloat("max_height", max_height);
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(grass_shader->ID, "texture_height"), 0);
 		glBindTexture(GL_TEXTURE_2D, textureHeight);
@@ -185,18 +189,21 @@ public:
 
 		terrain_shader->use();
 
+		if (parameter_changed) {
+			terrain_shader->setInt("tessLevel", TESS_LEVEL);
+			terrain_shader->setInt("numAxisPatches", numAxisPatch);
+			terrain_shader->setFloat("patchSize", patchSize);
+			terrain_shader->setFloat("max_height", max_height);
+			terrain_shader->setFloat("Kd", 0.5f);
+			terrain_shader->setFloat("Ks", 0.5f);
+			terrain_shader->setFloat("Ns", 20.0f);
+			terrain_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
+		}
 		terrain_shader->setMat4("projection", projection);
 		terrain_shader->setMat4("view", view);
-		terrain_shader->setInt("tessLevel", TESS_LEVEL);
-		terrain_shader->setInt("numAxisPatches", numAxisPatch);
-		terrain_shader->setFloat("patchSize", patchSize);
-		terrain_shader->setFloat("max_height", max_height);
-
 		terrain_shader->setVec3("camPos", mainCam->pos);
+		terrain_shader->setVec3("camFront", mainCam->front);
 		terrain_shader->setVec3("lightDir", lightDir);
-		terrain_shader->setFloat("Kd", 0.5f);
-		terrain_shader->setFloat("Ks", 0.5f);
-		terrain_shader->setFloat("Ns", 20.0f);
 
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(terrain_shader->ID, "texture_diffuse_rock"), 0);
@@ -239,6 +246,8 @@ public:
 		glDrawArraysInstanced(GL_PATCHES, 0, 4, numAxisPatch * numAxisPatch);
 		glBindVertexArray(0);
 	}
+	
+	inline void parameter_update() { parameter_changed = true; }
 };
 
 // Later...

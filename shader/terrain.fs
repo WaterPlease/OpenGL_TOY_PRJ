@@ -33,7 +33,7 @@ in FGINFO
 }fginfo;
 
 float uvFactorRock = 300.0;
-float uvFactorGrass = 300.0;
+float uvFactorGrass = 100.0;
 
 float directional_lighting(sampler2D normal_map,sampler2D spec_map,sampler2D ao_map,float uvFactor,float kd, float ks, float ns){
     vec3 normal = texture(normal_map,uvFactor*fginfo.uv).rgb;

@@ -2,7 +2,7 @@
 
 #include "Parameter.h"
 
-Engine::Engine(const char* title):renderer(title) {
+Engine::Engine(const char* title, int width, int height):renderer(title, width, height) {
     window = renderer.getWindow();
 
     // callback for resolution changed.
@@ -68,7 +68,7 @@ void Engine::loop() {
                 clock_t clk = clock();
                 clk = ((clk % 10800));
                 float deg = glm::radians(((float)clk) * 0.033f);
-                terrain.lightDir = glm::normalize(glm::vec3(std::sin(deg)* std::sin(deg), std::cos(deg), std::sin(deg)*std::cos(deg)));
+                terrain.lightDir = glm::normalize(glm::vec3(std::sin(deg)* std::sin(deg), std::cos(deg)+0.5, std::sin(deg)*std::cos(deg)));
                 terrain.draw();
             }
         }
@@ -123,6 +123,7 @@ void engine_input_handler(GLFWwindow* window) {
         if (tmp <= 64) TESS_LEVEL = tmp;
         std::cout << "Current Level : " << TESS_LEVEL << " ---- MAXIMUM LEVEL : " << 64 << "\n";
         lastADDPress = now;
+        parameter_changed = true;
     }
     else if (isIPressed && (now - lastADDPress) <= 50) {
         lastADDPress = now;
@@ -134,6 +135,7 @@ void engine_input_handler(GLFWwindow* window) {
         if (tmp > 0) TESS_LEVEL = tmp;
         std::cout << "Current Level : " << TESS_LEVEL << " ---- MAXIMUM LEVEL : " << 64 << "\n";
         lastSUBPress = now;
+        parameter_changed = true;
     }
     else if (isKPressed && (now - lastSUBPress) <= 50) {
         lastSUBPress = now;

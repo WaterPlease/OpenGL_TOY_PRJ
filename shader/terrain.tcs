@@ -5,27 +5,49 @@ uniform int tessLevel;
 layout (vertices = 4) out;
 
 uniform vec3 camPos;
+uniform vec3 camFront;
+uniform float cosHalfDiag;
 
-float lod1 = 120.0;
-float lod2 = 60.0;
+float lod1 = 100120.0;
+float lod2 = 10060.0;
 
 void main(void){
 	int lod1Level = max(1,tessLevel/4);
 	int lod2Level = max(1,tessLevel/2);
 	if(gl_InvocationID == 0){
+		float viewTest0 = dot(normalize(gl_in[0].gl_Position.xz-camPos.xz),normalize(camFront.xz));
+		float viewTest1 = dot(normalize(gl_in[1].gl_Position.xz-camPos.xz),normalize(camFront.xz));
+		float viewTest2 = dot(normalize(gl_in[2].gl_Position.xz-camPos.xz),normalize(camFront.xz));
+		float viewTest3 = dot(normalize(gl_in[3].gl_Position.xz-camPos.xz),normalize(camFront.xz));
+		float testVal_horizontal = max(max(max(viewTest0,viewTest1),viewTest2),viewTest3);
+		viewTest0 = dot(normalize(gl_in[0].gl_Position.xyz-camPos),camFront);
+		viewTest1 = dot(normalize(gl_in[1].gl_Position.xyz-camPos),camFront);
+		viewTest2 = dot(normalize(gl_in[2].gl_Position.xyz-camPos),camFront);
+		viewTest3 = dot(normalize(gl_in[3].gl_Position.xyz-camPos),camFront);
+		float testVal_3d = max(max(max(viewTest0,viewTest1),viewTest2),viewTest3);
+
 		vec2 camPosPlane = camPos.xz;
 		float d0 = distance(gl_in[0].gl_Position.xz,camPosPlane);
 		float d1 = distance(gl_in[1].gl_Position.xz,camPosPlane);
 		float d2 = distance(gl_in[2].gl_Position.xz,camPosPlane);
 		float d3 = distance(gl_in[3].gl_Position.xz,camPosPlane);
-		if(d0>lod1 ||d1>lod1 ||d2>lod1 ||d3>lod1){
+		float minDist = min(min(min(d0,d1),d2),d3);
+
+		if(testVal_horizontal<cosHalfDiag && testVal_3d < cosHalfDiag){
+			gl_TessLevelInner[0] = 0;
+			gl_TessLevelInner[1] = 0;
+			gl_TessLevelOuter[0] = 0;
+			gl_TessLevelOuter[1] = 0;
+			gl_TessLevelOuter[2] = 0;
+			gl_TessLevelOuter[3] = 0;
+		}else if(minDist>lod1){
 			gl_TessLevelInner[0] = lod1Level;
 			gl_TessLevelInner[1] = lod1Level;
 			gl_TessLevelOuter[0] = lod1Level;
 			gl_TessLevelOuter[1] = lod1Level;
 			gl_TessLevelOuter[2] = lod1Level;
 			gl_TessLevelOuter[3] = lod1Level;
-		}else if(d0>lod2 ||d1>lod2 ||d2>lod2 ||d3>lod2){
+		}else if(minDist>lod2){
 			gl_TessLevelInner[0] = lod2Level;
 			gl_TessLevelInner[1] = lod2Level;
 			gl_TessLevelOuter[0] = lod2Level;
