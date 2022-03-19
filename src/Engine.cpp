@@ -30,19 +30,64 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.tcs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.tes",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.gs");
-    objs.push_back(new TerrainObject(0.5f,100.0,ptr_shader, ptr_grass_shader));
+    auto ptr_water_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.vs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.fs");
+    objs.push_back(new TerrainObject(0.5f,200.0,ptr_shader, ptr_grass_shader,ptr_water_shader));
     //objs.push_back(new TerrainObject(0, 0, 10.0f));
-
-    // PARAMETER INIT
-    TESS_LEVEL = 24;
 }
 
 void Engine::loop() {
     while (!glfwWindowShouldClose(window)) {
-        engine_input_handler(window);
+        ImGuiIO& io = ImGui::GetIO();
+        if (!(io.WantCaptureKeyboard || io.WantCaptureMouse)) {
+            engine_input_handler(window);
+        }
 
         // Renderer draw
         renderer.startFrameRender();
+
+        // GUI PRE-RENDER
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        {
+            ImGui::Begin("Graphic setting");                          // Create a window called "Hello, world!" and append into it.
+
+            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+
+            if (ImGui::SliderInt("Ground tessLvl", &GROUND_TESS_LEVEL, 1, 64)) {            // Edit 1 float using a slider from 0.0f to 1.0f
+                parameter_changed = true;
+            }
+            if (ImGui::SliderInt("Grass tessLvl", &GRASS_TESS_LEVEL, 1, 64)) {            // Edit 1 float using a slider from 0.0f to 1.0f
+                parameter_changed = true;
+            }
+            if (ImGui::InputFloat("uvFactorRock", &uvFactorRock)   ||
+                ImGui::InputFloat("uvFactorGrass", &uvFactorGrass) ||
+                ImGui::InputFloat("uvFactorWater", &uvFactorWater)) {
+                parameter_changed = true;
+            }
+            if (ImGui::SliderFloat("max_height",&max_height,0.0f,100.0f,"%.3f",1.0f) ||
+                ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f)) {
+                parameter_changed = true;
+            }
+            ImGui::SliderInt("waterLambda", &waterLambda, 100, 10000);
+
+            ImGui::ColorEdit3("clear color", (float*)&(renderer.clearColor[0])); // Edit 3 floats representing a color
+            if (ImGui::SliderFloat3("sun dir", &sunLightDir[0], -1.0f, 1.0f, "%.3f", 1.0f)) {
+                sunLightDir[1] = clamp(sunLightDir[1], -0.0f, 1.0f);
+            }
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::End();
+        }
+        {
+            ImGui::Begin("Control setting");
+            ImGui::SliderFloat("move speed", &speed, 0.01f, 0.1f, "%.3f", 1.0f);
+            ImGui::SliderFloat("rotation speed", &rotSpeed, 0.01f, 1.0f, "%.3f", 1.0f);
+            ImGui::End();
+        }
+        ImGui::Render();
+
+        // object rendering
         for (auto iter = objs.begin(); iter != objs.end(); iter++) {
             BaseObject* ptr_obj = *iter;
             if (ptr_obj->getClassID() == ObjClass::Simple) {
@@ -65,17 +110,21 @@ void Engine::loop() {
             }
             else if (ptr_obj->getClassID() == ObjClass::Terrain) {
                 TerrainObject& terrain = *(TerrainObject*)ptr_obj;
-                clock_t clk = clock();
-                clk = ((clk % 10800));
-                float deg = glm::radians(((float)clk) * 0.033f);
-                terrain.lightDir = glm::normalize(glm::vec3(std::sin(deg)* std::sin(deg), std::cos(deg)+0.5, std::sin(deg)*std::cos(deg)));
                 terrain.draw();
             }
         }
+
+        // GUI render on opengl screen
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         renderer.endFrameRender();
 
         glfwPollEvents();
     }
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
     glfwTerminate();
 }
 
@@ -85,21 +134,18 @@ void engine_resoultion_callback(GLFWwindow* window, int width, int height) {
     std::cout << "<" << width << ", " << height << ">" << std::endl;
 }
 
-
-clock_t lastPPress = 0;
-clock_t lastADDPress = 0;
-clock_t lastSUBPress = 0;
-
-float speed = 0.01;
-float rotSpeed = 0.005f;
-clock_t prevTime = 0;
 void engine_input_handler(GLFWwindow* window) {
+    static bool   mouse_dragged = false;
+    static double mouse_xpos, mouse_ypos;
+    static double prev_xpos = 0.0, prev_ypos = 0.0;
+    static clock_t lastPPress = 0;
+    static clock_t prevTime = 0;
+
     clock_t now = clock();
     clock_t dt = now - prevTime;
     prevTime = now;
 
-    //mainCam->pos += dt * speed * glm::vec3(mainCam->front.x, 0.0, mainCam->front.z);
-
+    //Keyboard handle
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     
@@ -117,82 +163,52 @@ void engine_input_handler(GLFWwindow* window) {
         lastPPress = now;
     }
 
-    bool isIPressed = glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
-    if (isIPressed && (now - lastADDPress) > 50) {
-        GLuint tmp = TESS_LEVEL + 2;
-        if (tmp <= 64) TESS_LEVEL = tmp;
-        std::cout << "Current Level : " << TESS_LEVEL << " ---- MAXIMUM LEVEL : " << 64 << "\n";
-        lastADDPress = now;
-        parameter_changed = true;
-    }
-    else if (isIPressed && (now - lastADDPress) <= 50) {
-        lastADDPress = now;
-    }
-
-    bool isKPressed = glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
-    if (isKPressed && (now - lastSUBPress) > 50) {
-        GLuint tmp = TESS_LEVEL - 2;
-        if (tmp > 0) TESS_LEVEL = tmp;
-        std::cout << "Current Level : " << TESS_LEVEL << " ---- MAXIMUM LEVEL : " << 64 << "\n";
-        lastSUBPress = now;
-        parameter_changed = true;
-    }
-    else if (isKPressed && (now - lastSUBPress) <= 50) {
-        lastSUBPress = now;
-    }
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        mainCam->pos += dt * speed * mainCam->front;
+        glm::vec3 xyProjection = mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f);
+        if (glm::length(xyProjection) > 1e-3) {
+            mainCam->target += dt * speed * glm::normalize(mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f));
+            mainCam->updatePos();
+        }
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        mainCam->pos -= dt * speed * mainCam->front;
+        glm::vec3 xyProjection = mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f);
+        if (glm::length(xyProjection) > 1e-3) {
+            mainCam->target -= dt * speed * glm::normalize(mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f));
+            mainCam->updatePos();
+        }
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        mainCam->pos += dt * speed * mainCam->right;
+        mainCam->target += dt * speed * mainCam->right;
+        mainCam->updatePos();
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        mainCam->pos -= dt * speed * mainCam->right;
-    }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), -dt * rotSpeed, mainCam->right);
-        glm::vec4 _newFront = rotMat * glm::vec4(mainCam->front, 1.0f);
-        glm::vec3 newFront = glm::vec3(_newFront[0], _newFront[1], _newFront[2]);
-        mainCam->updateRot(newFront, mainCam->right, false);
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), dt * rotSpeed, mainCam->right);
-        glm::vec4 _newFront = rotMat * glm::vec4(mainCam->front, 1.0f);
-        glm::vec3 newFront = glm::vec3(_newFront[0], _newFront[1], _newFront[2]);
-        mainCam->updateRot(newFront, mainCam->right, false);
-    }
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), dt * rotSpeed, mainCam->front);
-        glm::vec4 _newUP = rotMat * glm::vec4(mainCam->up, 1.0f);
-        glm::vec3 newUp = glm::vec3(_newUP[0], _newUP[1], _newUP[2]);
-        mainCam->updateRot(mainCam->front, newUp, true);
-    }
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), -dt * rotSpeed, mainCam->front);
-        glm::vec4 _newUP = rotMat * glm::vec4(mainCam->up, 1.0f);
-        glm::vec3 newUp = glm::vec3(_newUP[0], _newUP[1], _newUP[2]);
-        mainCam->updateRot(mainCam->front, newUp, true);
-    }
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), dt * rotSpeed, mainCam->up);
-        glm::vec4 _newFront = rotMat * glm::vec4(mainCam->front, 1.0f);
-        glm::vec3 newFront = glm::vec3(_newFront[0], _newFront[1], _newFront[2]);
-        mainCam->updateRot(newFront, mainCam->up);
-    }
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), -dt * rotSpeed, mainCam->up);
-        glm::vec4 _newFront = rotMat * glm::vec4(mainCam->front, 1.0f);
-        glm::vec3 newFront = glm::vec3(_newFront[0], _newFront[1], _newFront[2]);
-        mainCam->updateRot(newFront, mainCam->up);
+        mainCam->target -= dt * speed * mainCam->right;
+        mainCam->updatePos();
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        mainCam->pos += glm::vec3(0.0f, dt * speed, 0.0f);
+        mainCam->target += glm::vec3(0.0f, dt * speed, 0.0f);
+        mainCam->updatePos();
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-        mainCam->pos += glm::vec3(0.0f, -dt * speed, 0.0f);
+        mainCam->target += glm::vec3(0.0f, -dt * speed, 0.0f);
+        mainCam->updatePos();
+    }
+
+
+    // Mouse handle
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1)==GLFW_PRESS) {
+        if (!mouse_dragged) {
+            glfwGetCursorPos(window, &prev_xpos, &prev_ypos);
+            mouse_dragged = true;
+        }
+        glfwGetCursorPos(window, &mouse_xpos, &mouse_ypos);
+        mainCam->phi -= rotSpeed * (float)(mouse_xpos - prev_xpos);
+        mainCam->theta -= rotSpeed * (float)(mouse_ypos - prev_ypos);
+        prev_xpos = mouse_xpos;
+        prev_ypos = mouse_ypos;
+        mainCam->updateRot();
+    }
+    else {
+        mouse_dragged = false;
     }
 }

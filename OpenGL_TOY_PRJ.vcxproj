@@ -23,6 +23,13 @@
     <ClCompile Include="src\Component.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Model.cpp" />
@@ -35,6 +42,16 @@
     <ClInclude Include="includes\Component.h" />
     <ClInclude Include="includes\Engine.h" />
     <ClInclude Include="includes\glm_pre.h" />
+    <ClInclude Include="includes\GUI.h" />
+    <ClInclude Include="includes\imgui\imconfig.h" />
+    <ClInclude Include="includes\imgui\imgui.h" />
+    <ClInclude Include="includes\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="includes\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="includes\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="includes\imgui\imgui_internal.h" />
+    <ClInclude Include="includes\imgui\imstb_rectpack.h" />
+    <ClInclude Include="includes\imgui\imstb_textedit.h" />
+    <ClInclude Include="includes\imgui\imstb_truetype.h" />
     <ClInclude Include="includes\Logger.h" />
     <ClInclude Include="includes\Mesh.hpp" />
     <ClInclude Include="includes\Model.hpp" />
@@ -44,6 +61,7 @@
     <ClInclude Include="includes\Shader.hpp" />
     <ClInclude Include="includes\stb_image.h" />
     <ClInclude Include="includes\Texture.hpp" />
+    <ClInclude Include="includes\util.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Doc\TODO.md" />
@@ -58,6 +76,8 @@
     <None Include="shader\terrain.tcs" />
     <None Include="shader\terrain.tes" />
     <None Include="shader\terrain.vs" />
+    <None Include="shader\water.fs" />
+    <None Include="shader\water.vs" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -119,7 +139,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(MSBuildProjectDirectory)\includes;C:\OpenGL\includes;$(IncludePath)</IncludePath>
+    <IncludePath>$(MSBuildProjectDirectory)\includes;$(MSBuildProjectDirectory)\includes\imgui;C:\OpenGL\includes;$(IncludePath)</IncludePath>
     <LibraryPath>C:\OpenGL\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

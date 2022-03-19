@@ -1,7 +1,20 @@
 #ifndef _PARAMETER_H_
 #define _PARAMETER_H_
 
-extern int TESS_LEVEL;
+#include "glm_pre.h"
+
+extern int GROUND_TESS_LEVEL;
+extern int GRASS_TESS_LEVEL;
 extern bool parameter_changed;
 
+extern glm::vec3 sunLightDir;
+extern int waterLambda;
+extern float waterLevel;
+extern float uvFactorWater;
+extern float uvFactorRock;
+extern float uvFactorGrass;
+extern float max_height;
+
+extern float speed;
+extern float rotSpeed;
 #endif

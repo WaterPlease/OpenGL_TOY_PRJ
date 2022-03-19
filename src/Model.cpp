@@ -4,6 +4,7 @@
 #include <stb_image.h>
 
 #include <iostream>
+#include <thread>
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma)
 {
     string filename = string(path);
@@ -80,6 +81,83 @@ unsigned int TextureFromFile_ForHeight(const char* path, const string& directory
     else
     {
         std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+void thread_img_load(std::vector<unsigned char*>& dataLst,int idx,char* filename, int *width, int *height, int *nrComponents) {
+    unsigned char* data = stbi_load(filename, width, height, nrComponents, 0);
+    if (!data) {
+        std::cout << "Texture failed to load at path: " << filename << std::endl;
+    }
+    dataLst[idx] = data;
+}
+
+unsigned int Texture3DFromFile(const std::vector<string> pathLst, const string& directory, bool gamma)
+{
+    std::vector<unsigned char*> dataLst;
+    std::vector<std::thread> threadLst;
+    GLenum format;
+    int width, height, nrComponents;
+    unsigned int textureID;
+    unsigned int i = 0;
+
+    dataLst.resize(pathLst.size());
+    threadLst.resize(pathLst.size());
+    /*for (i = 0; i < pathLst.size(); i++) {
+        const char* path = pathLst[i].c_str();
+        string filename = directory+std::string("\\") + string(path);
+        dataLst[i] = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+        if (!dataLst[i]) {
+            std::cout << "Texture failed to load at path: " << filename << std::endl;
+        }
+        else {
+            std::cout << filename << "\n";
+        }
+    }*/
+    for (i = 0; i < pathLst.size(); i++) {
+        threadLst[i] = std::thread(
+            [&dataLst,pathLst,i,directory,&width,&height,&nrComponents]() {
+                const char* path = pathLst[i].c_str();
+                string filename = directory + std::string("\\") + string(path);
+                dataLst[i] = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+                if (!dataLst[i]) {
+                    std::cout << "Texture failed to load at path: " << filename << std::endl;
+                }
+            }
+        );
+    }
+    for (i = 0; i < pathLst.size(); i++) {
+        threadLst[i].join();
+    }
+    if (nrComponents == 1)
+        format = GL_RED;
+    else if (nrComponents == 3)
+        format = GL_RGB;
+    else if (nrComponents == 4)
+        format = GL_RGBA;
+    std::cout << "FORMAT : " << nrComponents << "\n";
+    std::cout << "WIDTH : " << width << "\n";
+    std::cout << "HEIGHT : " << height << "\n";
+
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_3D, textureID);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage3D(GL_TEXTURE_3D, 0, format, width, height, pathLst.size(),0, format, GL_UNSIGNED_BYTE,NULL);
+
+    i = 0;
+    for (auto iter = dataLst.begin(); iter != dataLst.end(); iter++) {
+        unsigned char* data = *iter;
+        glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0,
+            i, width, height, 1, format, GL_UNSIGNED_BYTE, data);
+        i++;
         stbi_image_free(data);
     }
 

@@ -24,6 +24,7 @@
 using namespace std;
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
 unsigned int TextureFromFile_ForHeight(const char* path, const string& directory, bool gamma = false);
+unsigned int Texture3DFromFile(const std::vector<string> pathLst, const string& directory, bool gamma=false);
 
 class Model
 {

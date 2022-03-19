@@ -14,6 +14,7 @@ uniform mat4 projection;
 
 uniform vec3 camFront;
 uniform float cosHalfDiag;
+uniform float waterLevel;
 
 out vec3 fNormal;
 out vec3 viewDir;
@@ -33,8 +34,8 @@ void main() {
     float planeWeight = dot(upVec,normal);
     
 	float testVal_3d = dot(normalize(center.xyz-camPos),camFront);
-    if(testVal_3d < cosHalfDiag){
-
+    if(testVal_3d < cosHalfDiag || center.y<waterLevel){
+            
     }else if(planeWeight > 0.998){
         if(0<1){//distance(center.xz,camPos.xz)>60.0){
             float rad = 2*M_PI*rand(center.xz);

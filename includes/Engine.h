@@ -12,6 +12,7 @@
 #include "Renderer.h"
 
 #include "Object.h"
+#include "GUI.h"
 
 class Engine {
 	std::string title;
