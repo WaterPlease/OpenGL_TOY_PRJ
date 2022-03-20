@@ -196,5 +196,14 @@
     <None Include="shader\water.fs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
+    <None Include="shader\water.tcs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\water.tes">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\water.gs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

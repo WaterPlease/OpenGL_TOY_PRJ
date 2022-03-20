@@ -61,6 +61,7 @@ public:
 class TerrainObject : public BaseObject {
 	GLfloat patchSize;
 	GLfloat grass_patchSize;
+	GLfloat landSize;
 	int numAxisPatch;
 	int grass_numAxisPatch;
 
@@ -115,9 +116,10 @@ public:
 	GLuint grass_VAO;
 	GLuint water_VAO;
 	GLfloat grass_factor = 1.5f;
-	TerrainObject(GLfloat _patchSize, GLfloat landSize, Shader* _t_shader,Shader* _g_shader,Shader* _w_shader) :BaseObject(ObjClass::Terrain)
+	TerrainObject(GLfloat _patchSize, GLfloat _landSize, Shader* _t_shader,Shader* _g_shader,Shader* _w_shader) :BaseObject(ObjClass::Terrain)
 		,terrain_shader(_t_shader), grass_shader(_g_shader),water_shader(_w_shader) {
 		patchSize = _patchSize;
+		landSize = _landSize;
 		float vertices[] = { - patchSize,0.0f,- patchSize,
 							 -patchSize,0.0f,+patchSize,
 							 +patchSize,0.0f,+patchSize,
@@ -159,12 +161,10 @@ public:
 
 		// water patches
 		float water_vertices[] = {
-			-landSize * 0.5f, 0.0f, -landSize * 0.5f, 0.0f,1.0f,
-			-landSize * 0.5f, 0.0f, +landSize * 0.5f, 0.0f,0.0f,
-			+landSize * 0.5f, 0.0f, +landSize * 0.5f, 1.0f,0.0f,
-			+landSize * 0.5f, 0.0f, +landSize * 0.5f, 1.0f,0.0f,
-			+landSize * 0.5f, 0.0f, -landSize * 0.5f, 1.0f,1.0f,
-			-landSize * 0.5f, 0.0f, -landSize * 0.5f, 0.0f,1.0f,};
+			-landSize * 0.5f, 0.0f, -landSize * 0.5f,
+			-landSize * 0.5f, 0.0f, +landSize * 0.5f,
+			+landSize * 0.5f, 0.0f, +landSize * 0.5f,
+			+landSize * 0.5f, 0.0f, -landSize * 0.5f,};
 		glGenVertexArrays(1, &water_VAO);
 		glGenBuffers(1, &water_VBO);
 
@@ -172,9 +172,7 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER,water_VBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(water_vertices), &water_vertices[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		glBindVertexArray(0);
 
 		LoadTexture();
@@ -278,22 +276,29 @@ public:
 
 		water_shader->use();
 		if (parameter_changed) {
+			water_shader->setInt("tessLevel", 32);
 			water_shader->setFloat("waterLevel", waterLevel);
 			water_shader->setFloat("uvFactorWater", uvFactorWater);
 			water_shader->setFloat("waterLevel", waterLevel);
+			water_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
+			water_shader->setFloat("landSize", landSize);
+			water_shader->setFloat("waveLength", waveLength);
+			water_shader->setFloat("steepness", steepness);
 		}
-		float time = (float)(clock() % (waterLambda +1)) / (float)(waterLambda);
 		water_shader->setMat4("projection", projection);
 		water_shader->setMat4("view", view);
 		water_shader->setVec3("camPos", mainCam->pos);
+		water_shader->setVec3("camFront", mainCam->front);
 		water_shader->setVec3("lightDir", glm::normalize(sunLightDir));
-		water_shader->setFloat("time", time);
+		water_shader->setFloat("waterTimeFactor", waterLambda);
+		water_shader->setFloat("time", (float)clock()*0.001);
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_normal"), 0);
 		glBindTexture(GL_TEXTURE_3D, textureWaterNormal);
 
 		glBindVertexArray(water_VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glPatchParameteri(GL_PATCH_VERTICES, 4);
+		glDrawArrays(GL_PATCHES, 0, 4);
 		glBindVertexArray(0);
 		
 	}

@@ -8,12 +8,15 @@ extern int GRASS_TESS_LEVEL;
 extern bool parameter_changed;
 
 extern glm::vec3 sunLightDir;
-extern int waterLambda;
+extern float waterLambda;
 extern float waterLevel;
 extern float uvFactorWater;
 extern float uvFactorRock;
 extern float uvFactorGrass;
 extern float max_height;
+
+extern float waveLength;
+extern float steepness;
 
 extern float speed;
 extern float rotSpeed;

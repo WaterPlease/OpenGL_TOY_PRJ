@@ -13,8 +13,8 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    //window = glfwCreateWindow(1920,1080, title, glfwGetPrimaryMonitor(), NULL);
-    window = glfwCreateWindow(screenRes.x, screenRes.y, title, NULL, NULL);
+    window = glfwCreateWindow(1920,1080, title, glfwGetPrimaryMonitor(), NULL);
+    //window = glfwCreateWindow(screenRes.x, screenRes.y, title, NULL, NULL);
     if (window == NULL)
     {
         logger.Log(__FUNCTION__, __LINE__, "Failed to create GLFW window");
@@ -31,7 +31,7 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
         exit(ERROR_APP_INIT_FAILURE);
     }
 
-    //glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 144);
+    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 144);
 
     // GUI initialization.
 

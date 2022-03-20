@@ -31,7 +31,10 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.tes",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.gs");
     auto ptr_water_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.vs",
-        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.fs");
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.fs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.tcs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.tes",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.gs");
     objs.push_back(new TerrainObject(0.5f,200.0,ptr_shader, ptr_grass_shader,ptr_water_shader));
     //objs.push_back(new TerrainObject(0, 0, 10.0f));
 }
@@ -70,7 +73,11 @@ void Engine::loop() {
                 ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f)) {
                 parameter_changed = true;
             }
-            ImGui::SliderInt("waterLambda", &waterLambda, 100, 10000);
+            if (ImGui::SliderFloat("waveLength", &waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("steepness", &steepness, 0.1f, 1.0f, "%.3f", 1.0f)) {
+                parameter_changed = true;
+            }
+            ImGui::SliderFloat("waterLambda", &waterLambda, 10.0f, 0.1f);
 
             ImGui::ColorEdit3("clear color", (float*)&(renderer.clearColor[0])); // Edit 3 floats representing a color
             if (ImGui::SliderFloat3("sun dir", &sunLightDir[0], -1.0f, 1.0f, "%.3f", 1.0f)) {
@@ -110,6 +117,10 @@ void Engine::loop() {
             }
             else if (ptr_obj->getClassID() == ObjClass::Terrain) {
                 TerrainObject& terrain = *(TerrainObject*)ptr_obj;
+                float clk = (float)clock() * 0.0001f;
+                glm::vec3 res(cos(clk), sin(clk)+1.0f, -cos(clk));;
+                sunLightDir = glm::normalize(res);
+                //sunLightDir = glm::normalize(sunLightDir+glm::vec3(0.0f,0.5f,0.0f));
                 terrain.draw();
             }
         }
