@@ -11,8 +11,10 @@ float uvFactorWater = 10.0f;
 float uvFactorRock = 300.0;
 float uvFactorGrass = 100.0;
 float max_height = 15.0f;
-float waveLength = 20.0f;
-float steepness = 0.5f;
+float water_waveLength = 20.0f;
+float water_steepness = 0.5f;
+float grass_waveLength = 20.0f;
+float grass_steepness = 0.5f;
 
 float speed = 0.01;
 float rotSpeed = 0.25f;

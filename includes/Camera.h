@@ -4,9 +4,13 @@
 #include "glm_pre.h"
 
 #include "util.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include <iostream>
 #include <cmath>
+
+#define SQRT2 1.414213
 
 class Camera {
 public:
@@ -71,4 +75,71 @@ public:
 	}
 };
 extern Camera* mainCam;
+
+class Sun{
+	GLuint depthFBO;
+	GLuint scrX;
+	GLuint scrY;
+	double time;
+public:
+	glm::vec3 lightDir;
+	GLuint depthMap;
+	GLuint shadow_resolution;
+	Sun(const glm::vec3& _lDir,GLuint _resolution,GLuint _scrX, GLuint _scrY):lightDir(_lDir),shadow_resolution(_resolution),scrX(_scrX),scrY(_scrY) {
+		glGenFramebuffers(1, &depthFBO);
+		glGenTextures(1, &depthMap);
+		
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,shadow_resolution,shadow_resolution,0, GL_DEPTH_COMPONENT,GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+
+		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,depthMap,0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	inline void begin() {
+		time = glfwGetTime() * 0.5;
+		glViewport(0, 0, shadow_resolution, shadow_resolution);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		//glCullFace(GL_FRONT);
+	}
+	inline void end() {
+		//glCullFace(GL_BACK);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, scrX, scrY);
+	}
+	inline glm::mat4 getOrtho(float landSize) {
+		landSize *= SQRT2 * 0.5f;
+		float wFactor = 1.3f;
+		float hFactor = 1.0f;
+		return glm::ortho(-landSize*wFactor,landSize*wFactor,-landSize*hFactor,landSize*hFactor,0.0f, landSize*3.0f);
+	}
+	inline glm::mat4 getViewMat(float landSize) {
+		glm::vec3 lightPos;
+		lightPos.x = sin(time) * 3.0f;
+		lightPos.z = cos(time) * 2.0f;
+		lightPos.y = 1.5f + cos(time) * 1.0f;
+		lightDir = glm::normalize(lightPos);
+		//lightDir = glm::normalize(-mainCam->front);
+		glm::vec3 up(0.0, 1.0, 0.0);
+		up = normalize(up);
+		return glm::lookAt(glm::normalize(lightDir)*(landSize),
+							glm::vec3(0.0f),
+							up);
+	}
+	inline glm::mat4 lightSpaceMat(float landSize) {
+		return getOrtho(landSize) * getViewMat(landSize);
+	}
+};
+extern Sun* sun;
 #endif

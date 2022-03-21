@@ -7,6 +7,7 @@ uniform sampler2D texture_height;
 uniform float max_height;
 uniform int numAxisPatches;
 uniform float patchSize;
+uniform float landSize;
 
 float EPS = 0.001;
 
@@ -17,6 +18,7 @@ vec2 getUV(vec3 pos,float minVal,float maxVal){
     return vec2(u,v);
 }
 float getHeight(vec2 uv){
+    //return max_height * texture(texture_height,uv).x;
     return max_height * (texture(texture_height,uv).x
                         +texture(texture_height,uv-vec2(-EPS,EPS)).x
                         +texture(texture_height,uv+vec2(-EPS,EPS)).x
@@ -26,12 +28,11 @@ float getHeight(vec2 uv){
                         +texture(texture_height,uv+vec2(EPS,0.0)).x
                         +texture(texture_height,uv-vec2(0.0,EPS)).x
                         +texture(texture_height,uv+vec2(0.0,EPS)).x)/9.0;
-    return max_height * texture(texture_height,uv).x;
 }
 
 void main(void){
-    float minVal = -2*patchSize*(numAxisPatches/2);
-    float maxVal = 2*patchSize*(numAxisPatches-1-(numAxisPatches/2));
+    float minVal = -0.5*landSize;
+    float maxVal = 0.5*landSize;
 
     vec4 v0 = mix( gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
     vec4 v1 = mix( gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);

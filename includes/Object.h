@@ -21,6 +21,7 @@ public:
 	BaseObject(ObjClass cID):classID(cID) { }
 	virtual void update() { return; } // do nothing
 	virtual void draw() { return; }   // do nothing
+	virtual void shadowDraw() { return; }   // do nothing
 	inline ObjClass getClassID() { return classID; }
 };
 
@@ -74,29 +75,29 @@ class TerrainObject : public BaseObject {
 	GLuint textureSpecGrass;
 	GLuint textureAoRock;
 	GLuint textureAoGrass;
-	GLuint textureHeight;
 	GLuint textureWaterNormal;
 
 	Shader* terrain_shader;
+	Shader* terrain_shadow_shader;
 	Shader* grass_shader;
 	Shader* water_shader;
 
 	void LoadTexture() {
 		textureDiffuseGrass = TextureFromFile("Ground_Grass_001_COLOR.jpg",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
-		textureDiffuseRock = TextureFromFile("Rock_039_baseColor.jpg",
+		textureDiffuseRock = TextureFromFile("Rock_04_DIFF.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 		textureNormalGrass = TextureFromFile("Ground_Grass_001_NORM.jpg",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
-		textureNormalRock = TextureFromFile("Rock_039_normal.jpg",
+		textureNormalRock = TextureFromFile("Rock_04_NRM.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 		textureSpecGrass = TextureFromFile("Ground_Grass_001_ROUGH.jpg",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
-		textureSpecRock = TextureFromFile("Rock_039_roughness.jpg",
+		textureSpecRock = TextureFromFile("Rock_04_SPEC.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 		textureAoGrass = TextureFromFile("Ground_Grass_001_OCC.jpg",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
-		textureAoRock = TextureFromFile("Rock_039_ambientOcclusion.jpg",
+		textureAoRock = TextureFromFile("Rock_04_OCC.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 		textureHeight  = TextureFromFile_ForHeight("_terrain_height.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
@@ -115,9 +116,10 @@ public:
 	GLuint VAO;
 	GLuint grass_VAO;
 	GLuint water_VAO;
+	GLuint textureHeight;
 	GLfloat grass_factor = 1.5f;
-	TerrainObject(GLfloat _patchSize, GLfloat _landSize, Shader* _t_shader,Shader* _g_shader,Shader* _w_shader) :BaseObject(ObjClass::Terrain)
-		,terrain_shader(_t_shader), grass_shader(_g_shader),water_shader(_w_shader) {
+	TerrainObject(GLfloat _patchSize, GLfloat _landSize, Shader* _t_shader,Shader* _t_shadow_shader,Shader* _g_shader,Shader* _w_shader) :BaseObject(ObjClass::Terrain)
+		,terrain_shader(_t_shader), terrain_shadow_shader(_t_shadow_shader),grass_shader(_g_shader),water_shader(_w_shader) {
 		patchSize = _patchSize;
 		landSize = _landSize;
 		float vertices[] = { - patchSize,0.0f,- patchSize,
@@ -178,8 +180,13 @@ public:
 		LoadTexture();
 	}
 	void draw() {
+
 		glm::mat4 projection = mainCam->getPerspectiveMat();
 		glm::mat4 view = mainCam->getViewMat();
+		glm::mat4 lightSpaceMat = sun->lightSpaceMat(landSize);
+		//glm::mat4 projection = sun->getOrtho(landSize,max_height);
+		//glm::mat4 view = sun->getViewMat(landSize,max_height);
+		double time = glfwGetTime();
 
 		terrain_shader->use();
 
@@ -187,6 +194,7 @@ public:
 			terrain_shader->setInt("tessLevel", GROUND_TESS_LEVEL);
 			terrain_shader->setInt("numAxisPatches", numAxisPatch);
 			terrain_shader->setFloat("patchSize", patchSize);
+			terrain_shader->setFloat("landSize", landSize);
 			terrain_shader->setFloat("max_height", max_height);
 			terrain_shader->setFloat("Kd", 0.5f);
 			terrain_shader->setFloat("Ks", 0.5f);
@@ -199,7 +207,8 @@ public:
 		terrain_shader->setMat4("view", view);
 		terrain_shader->setVec3("camPos", mainCam->pos);
 		terrain_shader->setVec3("camFront", mainCam->front);
-		terrain_shader->setVec3("lightDir", glm::normalize(sunLightDir));
+		terrain_shader->setVec3("lightDir", glm::normalize(sun->lightDir));
+		terrain_shader->setMat4("lightSpaceMat", lightSpaceMat);
 
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(terrain_shader->ID, "texture_diffuse_rock"), 0);
@@ -237,6 +246,10 @@ public:
 		glUniform1i(glGetUniformLocation(terrain_shader->ID, "texture_height"), 8);
 		glBindTexture(GL_TEXTURE_2D, textureHeight);
 
+		glActiveTexture(GL_TEXTURE9);
+		glUniform1i(glGetUniformLocation(terrain_shader->ID, "texture_shadow"), 9);
+		glBindTexture(GL_TEXTURE_2D, sun->depthMap);
+
 		glBindVertexArray(VAO);
 		glPatchParameteri(GL_PATCH_VERTICES, 4);
 		glDrawArraysInstanced(GL_PATCHES, 0, 4, numAxisPatch * numAxisPatch);
@@ -249,21 +262,30 @@ public:
 			grass_shader->setInt("tessLevel", GRASS_TESS_LEVEL);
 			grass_shader->setInt("numAxisPatches", grass_numAxisPatch);
 			grass_shader->setFloat("patchSize", grass_patchSize);
+			grass_shader->setFloat("landSize", landSize);
 			grass_shader->setFloat("grassWidth", 0.05f);
 			grass_shader->setFloat("grassLean", 0.8f);
-			grass_shader->setFloat("grassHeight", 0.25f);
+			grass_shader->setFloat("grassHeight", 0.7f);
 			grass_shader->setFloat("max_height", max_height);
 			grass_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
 			grass_shader->setFloat("waterLevel", waterLevel);
+			grass_shader->setFloat("waveLength", grass_waveLength);
+			grass_shader->setFloat("steepness", grass_steepness);
 		}
 		grass_shader->setMat4("projection", projection);
 		grass_shader->setMat4("view", view);
 		grass_shader->setVec3("camPos", mainCam->pos);
 		grass_shader->setVec3("camFront", mainCam->front);
-		grass_shader->setVec3("lightDir", glm::normalize(sunLightDir));
+		grass_shader->setVec3("lightDir", glm::normalize(sun->lightDir));
+		grass_shader->setMat4("lightSpaceMat", lightSpaceMat);
+		grass_shader->setFloat("time", time);
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(grass_shader->ID, "texture_height"), 0);
 		glBindTexture(GL_TEXTURE_2D, textureHeight);
+
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(grass_shader->ID, "texture_shadow"), 1);
+		glBindTexture(GL_TEXTURE_2D, sun->depthMap);
 
 		glDisable(GL_CULL_FACE);
 
@@ -282,16 +304,16 @@ public:
 			water_shader->setFloat("waterLevel", waterLevel);
 			water_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
 			water_shader->setFloat("landSize", landSize);
-			water_shader->setFloat("waveLength", waveLength);
-			water_shader->setFloat("steepness", steepness);
+			water_shader->setFloat("waveLength", water_waveLength);
+			water_shader->setFloat("steepness", water_steepness);
 		}
 		water_shader->setMat4("projection", projection);
 		water_shader->setMat4("view", view);
 		water_shader->setVec3("camPos", mainCam->pos);
 		water_shader->setVec3("camFront", mainCam->front);
-		water_shader->setVec3("lightDir", glm::normalize(sunLightDir));
+		water_shader->setVec3("lightDir", glm::normalize(sun->lightDir));
 		water_shader->setFloat("waterTimeFactor", waterLambda);
-		water_shader->setFloat("time", (float)clock()*0.001);
+		water_shader->setFloat("time", time);
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_normal"), 0);
 		glBindTexture(GL_TEXTURE_3D, textureWaterNormal);
@@ -301,6 +323,25 @@ public:
 		glDrawArrays(GL_PATCHES, 0, 4);
 		glBindVertexArray(0);
 		
+	}
+	void shadowDraw() {
+		terrain_shadow_shader->use();
+
+		terrain_shadow_shader->setInt("tessLevel", 3);//
+		terrain_shadow_shader->setInt("numAxisPatches", numAxisPatch);//
+		terrain_shadow_shader->setFloat("patchSize", patchSize);//
+		terrain_shadow_shader->setFloat("landSize", landSize);//
+		terrain_shadow_shader->setFloat("max_height", max_height);//
+		terrain_shadow_shader->setMat4("lightSpaceMat", sun->lightSpaceMat(landSize));;
+
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(terrain_shadow_shader->ID, "texture_height"), 0);
+		glBindTexture(GL_TEXTURE_2D, textureHeight);
+
+		glBindVertexArray(VAO);
+		glPatchParameteri(GL_PATCH_VERTICES, 4);
+		glDrawArraysInstanced(GL_PATCHES, 0, 4, numAxisPatch * numAxisPatch);
+		glBindVertexArray(0);
 	}
 	
 	inline void parameter_update() { parameter_changed = true; }

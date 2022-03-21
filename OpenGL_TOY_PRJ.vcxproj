@@ -76,6 +76,10 @@
     <None Include="shader\terrain.tcs" />
     <None Include="shader\terrain.tes" />
     <None Include="shader\terrain.vs" />
+    <None Include="shader\terrain_shadow.fs" />
+    <None Include="shader\terrain_shadow.tcs" />
+    <None Include="shader\terrain_shadow.tes" />
+    <None Include="shader\terrain_shadow.vs" />
     <None Include="shader\water.fs" />
     <None Include="shader\water.gs" />
     <None Include="shader\water.tcs" />

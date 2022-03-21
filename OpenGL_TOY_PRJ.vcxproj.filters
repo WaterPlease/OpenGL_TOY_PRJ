@@ -205,5 +205,17 @@
     <None Include="shader\water.gs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
+    <None Include="shader\terrain_shadow.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\terrain_shadow.tcs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\terrain_shadow.tes">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\terrain_shadow.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

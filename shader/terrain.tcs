@@ -8,8 +8,8 @@ uniform vec3 camPos;
 uniform vec3 camFront;
 uniform float cosHalfDiag;
 
-float lod1 = 100120.0;
-float lod2 = 10060.0;
+float lod1 = 120.0;
+float lod2 = 90.0;
 
 void main(void){
 	int lod1Level = max(1,tessLevel/4);

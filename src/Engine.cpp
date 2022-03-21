@@ -19,6 +19,9 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.fs",nullptr,nullptr));
     */
 
+    // add sun
+    sun = new Sun(glm::vec3(-2.0f, 4.0f, -1.0f), 1024, width, height);
+
     // Load Tessellation shader
     auto ptr_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain.vs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain.fs",
@@ -35,7 +38,11 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.tcs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.tes",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.gs");
-    objs.push_back(new TerrainObject(0.5f,200.0,ptr_shader, ptr_grass_shader,ptr_water_shader));
+    auto ptr_shadow_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.vs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.fs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tcs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tes", nullptr);
+    objs.push_back(new TerrainObject(0.5f,100.0,ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
     //objs.push_back(new TerrainObject(0, 0, 10.0f));
 }
 
@@ -45,6 +52,19 @@ void Engine::loop() {
         if (!(io.WantCaptureKeyboard || io.WantCaptureMouse)) {
             engine_input_handler(window);
         }
+        // Generate shadeow map
+        sun->begin();
+        for (auto iter = objs.begin(); iter != objs.end(); iter++) {
+            BaseObject* ptr_obj = *iter;
+            if (ptr_obj->getClassID() == ObjClass::Simple) {
+                continue;
+            }
+            else if (ptr_obj->getClassID() == ObjClass::Terrain) {
+                TerrainObject& terrain = *(TerrainObject*)ptr_obj;
+                terrain.shadowDraw();
+            }
+        }
+        sun->end();
 
         // Renderer draw
         renderer.startFrameRender();
@@ -73,15 +93,19 @@ void Engine::loop() {
                 ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f)) {
                 parameter_changed = true;
             }
-            if (ImGui::SliderFloat("waveLength", &waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
-                ImGui::SliderFloat("steepness", &steepness, 0.1f, 1.0f, "%.3f", 1.0f)) {
+            if (ImGui::SliderFloat("water waveLength", &water_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("water steepness", &water_steepness, 0.1f, 1.0f, "%.3f", 1.0f)) {
                 parameter_changed = true;
             }
-            ImGui::SliderFloat("waterLambda", &waterLambda, 10.0f, 0.1f);
+            if (ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f)) {
+                parameter_changed = true;
+            }
+            ImGui::SliderFloat("waterLambda", &waterLambda, 0.0f, 1.0f);
 
             ImGui::ColorEdit3("clear color", (float*)&(renderer.clearColor[0])); // Edit 3 floats representing a color
-            if (ImGui::SliderFloat3("sun dir", &sunLightDir[0], -1.0f, 1.0f, "%.3f", 1.0f)) {
-                sunLightDir[1] = clamp(sunLightDir[1], -0.0f, 1.0f);
+            if (ImGui::SliderFloat3("sun dir", &(sun->lightDir[0]), -1.0f, 1.0f, "%.3f", 1.0f)) {
+                //sun->lightDir = glm::normalize(sun->lightDir);
             }
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
@@ -92,7 +116,12 @@ void Engine::loop() {
             ImGui::SliderFloat("rotation speed", &rotSpeed, 0.01f, 1.0f, "%.3f", 1.0f);
             ImGui::End();
         }
-        ImGui::Render();
+        {
+            ImGui::Begin("Shadow Map");
+            ImGui::Image((ImTextureID)(sun->depthMap), ImVec2(400, 400),ImVec2(0,1),ImVec2(1,0));
+            ImGui::End();
+        }
+
 
         // object rendering
         for (auto iter = objs.begin(); iter != objs.end(); iter++) {
@@ -117,15 +146,16 @@ void Engine::loop() {
             }
             else if (ptr_obj->getClassID() == ObjClass::Terrain) {
                 TerrainObject& terrain = *(TerrainObject*)ptr_obj;
-                float clk = (float)clock() * 0.0001f;
-                glm::vec3 res(cos(clk), sin(clk)+1.0f, -cos(clk));;
-                sunLightDir = glm::normalize(res);
+                //float clk = (float)clock() * 0.0001f;
+                //glm::vec3 res(cos(clk), 0.2f, -sin(clk));;
+                //sunLightDir = glm::normalize(res);
                 //sunLightDir = glm::normalize(sunLightDir+glm::vec3(0.0f,0.5f,0.0f));
                 terrain.draw();
             }
         }
 
         // GUI render on opengl screen
+        ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         renderer.endFrameRender();
 

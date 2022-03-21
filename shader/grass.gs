@@ -11,18 +11,52 @@ uniform float grassHeight;
 uniform vec3 camPos;
 uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 lightSpaceMat;
+uniform float max_height;
 
 uniform vec3 camFront;
 uniform float cosHalfDiag;
 uniform float waterLevel;
 
+uniform float steepness;
+uniform float waveLength;
+uniform float time;
+
 out vec3 fNormal;
 out vec3 viewDir;
+out vec4 lightSpacePos;
 out float green_weight;
 
 float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
+
+vec3 trochoidal(vec3 v, vec2 dir, float steep, float wavelength,float weight){
+    
+	vec3 p = v;
+
+	float k = 2 * M_PI / wavelength;
+    float c = sqrt(9.8 / k);
+	float f = k * (dot(dir,p.xz) - c * time);
+	float a = steep / k;
+	
+    vec2 d = normalize(dir);
+
+    p.x += d.x * (a * cos(f))*weight;
+	p.y += a * sin(f);
+	p.z += d.y * (a * cos(f))*weight;
+
+	return p;
+}
+
+vec3 multi_trochoidal(vec3 v,float weight){
+    vec3  res = trochoidal(v,normalize(vec2(1.0,-1.0)),steepness,waveLength,weight);
+    res    +=     trochoidal(v,vec2(1.0,0.0),steepness*0.5,waveLength*0.5,weight);
+    res    +=     trochoidal(v,normalize(vec2(0.2,0.8)),steepness*0.5,waveLength*0.5,weight);
+    res *= 0.333;
+    return res;
+}
+
 
 float lod1 = 120.0;
 float lod2 = 90.0;
@@ -71,7 +105,7 @@ void main() {
             rot[1] = vec4(0.0,1.0,0.0,0.0);
             rot[2] = vec4(sinVal,0.0,cosVal,0.0);
             rot[3] = vec4(0.0,0.0,0.0,1.0);
-            center = center + vec4(r1-0.5,-0.01,r2-0.5,0.0);
+            center = center + vec4(r1-0.5,0.0,r2-0.5,0.0);
             green_weight = rand(vec2(r2))*0.6+0.4;
 
             vertices[0] = rot * (vertices[0] * grassTransform) + center;
@@ -79,23 +113,36 @@ void main() {
             vertices[2] = rot * (vertices[2] * grassTransform) + center;
             vertices[3] = rot * (vertices[3] * grassTransform) + center;
             vertices[4] = rot * (vertices[4] * grassTransform) + center;
+
+            //vertices[0] = vec4(multi_trochoidal(vertices[0].xyz),1.0);
+            vertices[1] = vec4(multi_trochoidal(vertices[1].xyz,0.5),1.0);
+            vertices[2] = vec4(multi_trochoidal(vertices[2].xyz,0.5),1.0);
+            vertices[3] = vec4(multi_trochoidal(vertices[3].xyz,1.0),1.0);
+            vertices[4] = vec4(multi_trochoidal(vertices[4].xyz,1.0),1.0);
+
             fNormal = vec4(cross(vertices[1].xyz-vertices[0].xyz,vertices[2].xyz-vertices[0].xyz),1.0).xyz;
             fNormal = -normalize(fNormal);
 
+            vec4 bump = vec4(0.0,0.0,-0.5,0.0);
             gl_Position = projection * view * vertices[0];
             viewDir = normalize(vertices[0].xyz - camPos);
+            lightSpacePos = lightSpaceMat * (vertices[0]);
             EmitVertex();
             gl_Position = projection * view * vertices[1];
             viewDir = normalize(vertices[1].xyz - camPos);
+            lightSpacePos = lightSpaceMat * (vertices[1]);
             EmitVertex();
             gl_Position = projection * view * vertices[2];
             viewDir = normalize(vertices[2].xyz - camPos);
+            lightSpacePos = lightSpaceMat * (vertices[2]);
             EmitVertex();
             gl_Position = projection * view * vertices[3];
             viewDir = normalize(vertices[3].xyz - camPos);
+            lightSpacePos = lightSpaceMat * (vertices[3]);
             EmitVertex();
             gl_Position = projection * view * vertices[4];
             viewDir = normalize(vertices[4].xyz - camPos);
+            lightSpacePos = lightSpaceMat * (vertices[4]);
             EmitVertex();
         }
     }
