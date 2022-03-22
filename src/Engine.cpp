@@ -19,8 +19,10 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.fs",nullptr,nullptr));
     */
 
+    ComputeShader::printWorkgrouInfo();
+
     // add sun
-    sun = new Sun(glm::vec3(-2.0f, 4.0f, -1.0f), 1024, width, height);
+    sun = new Sun(glm::vec3(-2.0f, 4.0f, -1.0f), 4096, width, height);
 
     // Load Tessellation shader
     auto ptr_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain.vs",
@@ -78,36 +80,37 @@ void Engine::loop() {
 
             ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
-            if (ImGui::SliderInt("Ground tessLvl", &GROUND_TESS_LEVEL, 1, 64)) {            // Edit 1 float using a slider from 0.0f to 1.0f
+            if (ImGui::SliderInt("Ground tessLvl", &GROUND_TESS_LEVEL, 1, 64)||
+                ImGui::SliderInt("Grass tessLvl", &GRASS_TESS_LEVEL, 1, 64)||
+                ImGui::SliderInt("Water tessLvl", &WATER_TESS_LEVEL, 1, 64)){
                 parameter_changed = true;
             }
-            if (ImGui::SliderInt("Grass tessLvl", &GRASS_TESS_LEVEL, 1, 64)) {            // Edit 1 float using a slider from 0.0f to 1.0f
+            if (ImGui::SliderFloat("shadowBlur jit", &shadowBlurJitter, 0.0f, 5.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("shadowBlur area", &shadowBlurArea, 0.1f, 10.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("gamma", &gamma, 0.0f, 3.0f, "%.3f", 1.0f)) {
                 parameter_changed = true;
             }
-            if (ImGui::InputFloat("uvFactorRock", &uvFactorRock)   ||
-                ImGui::InputFloat("uvFactorGrass", &uvFactorGrass) ||
-                ImGui::InputFloat("uvFactorWater", &uvFactorWater)) {
-                parameter_changed = true;
-            }
-            if (ImGui::SliderFloat("max_height",&max_height,0.0f,100.0f,"%.3f",1.0f) ||
-                ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f)) {
-                parameter_changed = true;
-            }
-            if (ImGui::SliderFloat("water waveLength", &water_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
-                ImGui::SliderFloat("water steepness", &water_steepness, 0.1f, 1.0f, "%.3f", 1.0f)) {
-                parameter_changed = true;
-            }
-            if (ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
-                ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f)) {
-                parameter_changed = true;
-            }
-            ImGui::SliderFloat("waterLambda", &waterLambda, 0.0f, 1.0f);
-
             ImGui::ColorEdit3("clear color", (float*)&(renderer.clearColor[0])); // Edit 3 floats representing a color
-            if (ImGui::SliderFloat3("sun dir", &(sun->lightDir[0]), -1.0f, 1.0f, "%.3f", 1.0f)) {
-                //sun->lightDir = glm::normalize(sun->lightDir);
-            }
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::End();
+        }
+        {
+            ImGui::Begin("Terrain setting");
+            if (ImGui::SliderFloat("uvFactorRock", &uvFactorRock, 1.0f, 1000.f, "%.3f", 1.0f)   ||
+                ImGui::SliderFloat("uvFactorGrass", &uvFactorGrass, 1.0f, 1000.f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("uvFactorWater", &uvFactorWater, 1.0f, 1000.f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("max_height", &max_height, 0.0f, 100.0f, "%.3f", 1.0f)       ||
+                ImGui::SliderFloat("waterSize", &waterSize, 1.0f, 8.0f, "%.3f", 1.0f)           ||
+                ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f)  ||
+                ImGui::SliderFloat("water waveLength", &water_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("water steepness", &water_steepness, 0.1f, 1.0f, "%.3f", 1.0f)||
+                ImGui::SliderFloat("water time speed", &waterLambda, 0.0f, 1.0f)                ||
+                ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f)||
+                ImGui::SliderFloat3("sun dir", &(sun->lightDir[0]), -1.0f, 1.0f, "%.3f", 1.0f)) {
+                parameter_changed = true;
+
+            }
             ImGui::End();
         }
         {
@@ -119,6 +122,11 @@ void Engine::loop() {
         {
             ImGui::Begin("Shadow Map");
             ImGui::Image((ImTextureID)(sun->depthMap), ImVec2(400, 400),ImVec2(0,1),ImVec2(1,0));
+            ImGui::End();
+        }
+        {
+            ImGui::Begin("raw screen");
+            ImGui::Image((ImTextureID)(renderer.hdrPIPE->colorTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
             ImGui::End();
         }
 
@@ -153,6 +161,13 @@ void Engine::loop() {
                 terrain.draw();
             }
         }
+
+
+        // skybox rendering
+        renderer.drawSkybox();
+
+        // post process
+        renderer.postProcess();
 
         // GUI render on opengl screen
         ImGui::Render();

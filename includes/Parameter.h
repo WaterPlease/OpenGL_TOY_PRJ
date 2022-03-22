@@ -5,8 +5,11 @@
 
 extern int GROUND_TESS_LEVEL;
 extern int GRASS_TESS_LEVEL;
+extern int WATER_TESS_LEVEL;
+extern float gamma;
 extern bool parameter_changed;
 
+extern float waterSize;
 extern float waterLambda;
 extern float waterLevel;
 extern float uvFactorWater;
@@ -21,4 +24,10 @@ extern float grass_steepness;
 
 extern float speed;
 extern float rotSpeed;
+
+extern int shadowFactor;
+extern float shadowBlurJitter;
+extern float shadowBlurArea;
+
+extern unsigned int texture_skybox;
 #endif

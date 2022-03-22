@@ -3,6 +3,8 @@
 
 #include "glm_pre.h"
 
+#include "Shader.hpp"
+
 #include "util.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -51,10 +53,6 @@ public:
 		up    =  glm::normalize(glm::vec3(-cosTheta*sinPhi, sinTheta,-cosTheta*cosPhi));
 		right = glm::normalize(glm::cross(front,up));//glm::normalize(glm::vec3( sinTheta*cosPhi,        0,-sinTheta*sinPhi));
 		updatePos();
-		std::cout << "theta-phi : " << theta << "-" << phi << "\n";
-		std::cout << "front : " << front.x << ", " << front.y << ", " << front.z << "\n";
-		std::cout << "up : " << up.x << ", " << up.y << ", " << up.z << "\n";
-		std::cout << "right : " << right.x << ", " << right.y << ", " << right.z << "\n";
 	}
 	inline void calcViewCone() {
 		double x = aspect;
@@ -91,8 +89,8 @@ public:
 		
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,shadow_resolution,shadow_resolution,0, GL_DEPTH_COMPONENT,GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -104,10 +102,12 @@ public:
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	}
 
 	inline void begin() {
-		time = glfwGetTime() * 0.5;
+		time = glfwGetTime() * 0.3;
+		//time = 1.0;
 		glViewport(0, 0, shadow_resolution, shadow_resolution);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);

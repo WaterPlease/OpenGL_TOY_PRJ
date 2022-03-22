@@ -99,7 +99,7 @@ class TerrainObject : public BaseObject {
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 		textureAoRock = TextureFromFile("Rock_04_OCC.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
-		textureHeight  = TextureFromFile_ForHeight("_terrain_height.png",
+		textureHeight  = TextureFromFile_ForHeight("terrain_height.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 
 		std::vector<string> pathLst;
@@ -117,7 +117,7 @@ public:
 	GLuint grass_VAO;
 	GLuint water_VAO;
 	GLuint textureHeight;
-	GLfloat grass_factor = 1.5f;
+	GLfloat grass_factor = 1.0f;
 	TerrainObject(GLfloat _patchSize, GLfloat _landSize, Shader* _t_shader,Shader* _t_shadow_shader,Shader* _g_shader,Shader* _w_shader) :BaseObject(ObjClass::Terrain)
 		,terrain_shader(_t_shader), terrain_shadow_shader(_t_shadow_shader),grass_shader(_g_shader),water_shader(_w_shader) {
 		patchSize = _patchSize;
@@ -163,10 +163,10 @@ public:
 
 		// water patches
 		float water_vertices[] = {
-			-landSize * 0.5f, 0.0f, -landSize * 0.5f,
-			-landSize * 0.5f, 0.0f, +landSize * 0.5f,
-			+landSize * 0.5f, 0.0f, +landSize * 0.5f,
-			+landSize * 0.5f, 0.0f, -landSize * 0.5f,};
+			-1.0 * 0.5f, 0.0f, -1.0 * 0.5f,
+			-1.0 * 0.5f, 0.0f, +1.0 * 0.5f,
+			+1.0 * 0.5f, 0.0f, +1.0 * 0.5f,
+			+1.0 * 0.5f, 0.0f, -1.0 * 0.5f,};
 		glGenVertexArrays(1, &water_VAO);
 		glGenBuffers(1, &water_VBO);
 
@@ -197,11 +197,13 @@ public:
 			terrain_shader->setFloat("landSize", landSize);
 			terrain_shader->setFloat("max_height", max_height);
 			terrain_shader->setFloat("Kd", 0.5f);
-			terrain_shader->setFloat("Ks", 0.5f);
 			terrain_shader->setFloat("Ns", 20.0f);
 			terrain_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
-			terrain_shader->setFloat("uvFactorWater", uvFactorRock);
-			terrain_shader->setFloat("uvFactorWater", uvFactorGrass);
+			terrain_shader->setFloat("uvFactorRock", uvFactorRock);
+			terrain_shader->setFloat("uvFactorGrass", uvFactorGrass);
+			terrain_shader->setInt("shadowFactor", shadowFactor);
+			terrain_shader->setFloat("shadowBlurJitter", shadowBlurJitter);
+			terrain_shader->setFloat("shadowBlurArea", shadowBlurArea);
 		}
 		terrain_shader->setMat4("projection", projection);
 		terrain_shader->setMat4("view", view);
@@ -264,13 +266,16 @@ public:
 			grass_shader->setFloat("patchSize", grass_patchSize);
 			grass_shader->setFloat("landSize", landSize);
 			grass_shader->setFloat("grassWidth", 0.05f);
-			grass_shader->setFloat("grassLean", 0.8f);
-			grass_shader->setFloat("grassHeight", 0.7f);
+			grass_shader->setFloat("grassLean", 0.3f);
+			grass_shader->setFloat("grassHeight", 0.2f);
 			grass_shader->setFloat("max_height", max_height);
 			grass_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
 			grass_shader->setFloat("waterLevel", waterLevel);
 			grass_shader->setFloat("waveLength", grass_waveLength);
 			grass_shader->setFloat("steepness", grass_steepness);
+			grass_shader->setInt("shadowFactor", shadowFactor);
+			grass_shader->setFloat("shadowBlurJitter", shadowBlurJitter);
+			grass_shader->setFloat("shadowBlurArea", shadowBlurArea);
 		}
 		grass_shader->setMat4("projection", projection);
 		grass_shader->setMat4("view", view);
@@ -296,16 +301,21 @@ public:
 
 		glEnable(GL_CULL_FACE);
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		water_shader->use();
 		if (parameter_changed) {
-			water_shader->setInt("tessLevel", 32);
+			water_shader->setInt("tessLevel", WATER_TESS_LEVEL);
 			water_shader->setFloat("waterLevel", waterLevel);
 			water_shader->setFloat("uvFactorWater", uvFactorWater);
 			water_shader->setFloat("waterLevel", waterLevel);
 			water_shader->setFloat("cosHalfDiag", mainCam->cosHalfDiag);
-			water_shader->setFloat("landSize", landSize);
+			water_shader->setFloat("landSize", landSize*waterSize);
 			water_shader->setFloat("waveLength", water_waveLength);
 			water_shader->setFloat("steepness", water_steepness);
+			water_shader->setInt("shadowFactor", shadowFactor);
+			water_shader->setFloat("shadowBlurJitter", shadowBlurJitter);
+			water_shader->setFloat("shadowBlurArea", shadowBlurArea);
 		}
 		water_shader->setMat4("projection", projection);
 		water_shader->setMat4("view", view);
@@ -313,21 +323,31 @@ public:
 		water_shader->setVec3("camFront", mainCam->front);
 		water_shader->setVec3("lightDir", glm::normalize(sun->lightDir));
 		water_shader->setFloat("waterTimeFactor", waterLambda);
+		water_shader->setMat4("lightSpaceMat", lightSpaceMat);
 		water_shader->setFloat("time", time);
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_normal"), 0);
 		glBindTexture(GL_TEXTURE_3D, textureWaterNormal);
 
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_skybox"), 1);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texture_skybox);
+
+		glActiveTexture(GL_TEXTURE2);
+		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_shadow"), 2);
+		glBindTexture(GL_TEXTURE_2D, sun->depthMap);
+
 		glBindVertexArray(water_VAO);
 		glPatchParameteri(GL_PATCH_VERTICES, 4);
 		glDrawArrays(GL_PATCHES, 0, 4);
 		glBindVertexArray(0);
+		glDisable(GL_BLEND);
 		
 	}
 	void shadowDraw() {
 		terrain_shadow_shader->use();
 
-		terrain_shadow_shader->setInt("tessLevel", 3);//
+		terrain_shadow_shader->setInt("tessLevel", 8);//
 		terrain_shadow_shader->setInt("numAxisPatches", numAxisPatch);//
 		terrain_shadow_shader->setFloat("patchSize", patchSize);//
 		terrain_shadow_shader->setFloat("landSize", landSize);//

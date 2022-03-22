@@ -68,9 +68,9 @@ void main() {
     float planeWeight = dot(upVec,normal);
     
 	float testVal_3d = dot(normalize(center.xyz-camPos),camFront);
-    if(testVal_3d < cosHalfDiag || center.y<waterLevel){
+    if(testVal_3d < cosHalfDiag || center.y<waterLevel || center.y>2.2){
             
-    }else if(planeWeight > 0.998){
+    }else if(planeWeight > 0.98){
         if(0<1){//distance(center.xz,camPos.xz)>60.0){
             float rad = 2*M_PI*rand(center.xz);
             float r1 = rand(vec2(rad));

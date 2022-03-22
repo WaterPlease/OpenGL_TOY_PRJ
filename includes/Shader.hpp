@@ -187,7 +187,7 @@ public:
         glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, glm::value_ptr(vec));
     }
 
-private:
+protected:
     // utility function for checking shader compilation/linking errors.
     // ------------------------------------------------------------------------
     void checkCompileErrors(unsigned int shader, std::string type)
@@ -212,6 +212,72 @@ private:
                 std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
             }
         }
+    }
+    Shader() {}
+};
+
+class ComputeShader :public Shader {
+    ComputeShader(const char* vertexPath, const char* fragmentPath, const char* tessControlPath = nullptr, const char* tessEvalPath = nullptr, const char* geometryPath = nullptr);
+public:
+    ComputeShader(const char* computePath)
+    {
+        // 1. retrieve the vertex/fragment source code from filePath
+        std::string computeCode;
+
+        std::ifstream computeFile;
+        // ensure ifstream objects can throw exceptions:
+        computeFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+        try
+        {
+            // open files
+            computeFile.open(computePath);
+            std::stringstream computeStream;
+            // read file's buffer contents into streams
+            computeStream << computeFile.rdbuf();
+            // close file handlers
+            computeFile.close();
+            // convert stream into string
+            computeCode = computeStream.str();
+        }
+        catch (std::ifstream::failure& e)
+        {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
+        }
+        const char* cShaderCode = computeCode.c_str();
+        // 2. compile shaders
+        unsigned int compute;
+        // vertex shader
+        compute = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(compute, 1, &cShaderCode, NULL);
+        glCompileShader(compute);
+        checkCompileErrors(compute, "VERTEX");
+        // shader Program
+        ID = glCreateProgram();
+        glAttachShader(ID, compute);
+        glLinkProgram(ID);
+        checkCompileErrors(ID, "PROGRAM");
+        // delete the shaders as they're linked into our program now and no longer necessary
+        glDeleteShader(compute);
+    }
+    static void printWorkgrouInfo() {
+        int work_grp_count[3];
+        int work_grp_size[3];
+        int work_grp_invc;
+
+        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT,0, &work_grp_count[0]);
+        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &work_grp_count[1]);
+        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &work_grp_count[2]);
+        
+        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,0, &work_grp_size[0]);
+        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
+        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_grp_size[2]);
+
+        glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &work_grp_invc);
+
+        std::cout << "Maximum global work group count : (" << work_grp_count[0] << ", " << work_grp_count[1] << ", " << work_grp_count[2] << ")\n";
+        std::cout << "Maximum local work group size : (" << work_grp_size[0] << ", " << work_grp_size[1] << ", " << work_grp_size[2] << ")\n";
+        std::cout << "Maximum local work group invocation : " << work_grp_invc << "\n";
     }
 };
 #endif

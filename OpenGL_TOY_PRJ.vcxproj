@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Doc\TODO.md" />
+    <None Include="shader\blur.cs" />
     <None Include="shader\default.fs" />
     <None Include="shader\default.vs" />
     <None Include="shader\grass.fs" />
@@ -72,6 +73,10 @@
     <None Include="shader\grass.tcs" />
     <None Include="shader\grass.tes" />
     <None Include="shader\grass.vs" />
+    <None Include="shader\hdrShader.fs" />
+    <None Include="shader\postProcess.vs" />
+    <None Include="shader\skybox.fs" />
+    <None Include="shader\skybox.vs" />
     <None Include="shader\terrain.fs" />
     <None Include="shader\terrain.tcs" />
     <None Include="shader\terrain.tes" />
