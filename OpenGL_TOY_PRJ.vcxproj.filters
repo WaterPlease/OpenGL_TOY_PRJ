@@ -78,6 +78,9 @@
     <ClCompile Include="src\imgui\imgui_widgets.cpp">
       <Filter>소스 파일\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="src\util.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Engine.h">
@@ -172,16 +175,7 @@
     <None Include="shader\terrain.tes">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\grass.tes">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\grass.gs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
     <None Include="shader\grass.fs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\grass.tcs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
     <None Include="shader\grass.vs">

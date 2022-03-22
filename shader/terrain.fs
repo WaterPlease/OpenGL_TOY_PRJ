@@ -33,6 +33,7 @@ uniform float Ns;
 uniform int shadowFactor;
 uniform float uvFactorRock;
 uniform float uvFactorGrass;
+uniform float grassCrit;
 
 uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
@@ -129,7 +130,7 @@ void main()
     seed = dot(fginfo.pos,fginfo.pos);
 
     float blend = 0.1;
-    float rockStart = 0.99;
+    float rockStart = grassCrit;
         
     vec3 upVec = vec3(0.0,1.0,0.0);
     float planeWeight = clamp(dot(upVec,fginfo.TBN*vec3(0.0,0.0,1.0)),0.0,1.0);
@@ -153,11 +154,11 @@ void main()
     vec3 result = mix(result_grass, result_rock,rockWeight);
     
     FragColor = vec4(result,1.0);//vec4(fginfo.TBN*vec3(0.0,0.0,1.0),1.0);
-    if(shadowStr<1.0){
-        if(fast){
+    //if(shadowStr<1.0){
+    //    if(fast){
     //        FragColor = vec4(0.0,0.0,1.0,1.0);
-        }else{
+    //    }else{
     //       FragColor = vec4(1.0,0.0,0.0,1.0)*(1-shadowStr);
-        }
-    }
+    //    }
+    //}
 }

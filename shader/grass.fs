@@ -9,15 +9,16 @@
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
+in vec2 texCoords;
+in vec4 lightSpacePos;
 in vec3 fNormal;
 in vec3 viewDir;
-in float green_weight;
-in vec4 lightSpacePos;
 
 uniform vec3 lightDir;
 uniform int shadowFactor;
 
 uniform sampler2D texture_shadow;
+uniform sampler2D texture_grass;
 
 out vec4 FragColor;
 
@@ -42,20 +43,22 @@ vec2 dartSampleSpace(vec2 jit){
     return sqrt(abs(jit.y))*vec2(sin(jit.x*2.0*M_PI),cos(jit.x*2.0*M_PI));
 }
 bool fast;
-float calcShadow(vec4 fragLightSpace,vec3 normal,vec3 lDir){
+float calcShadow(vec4 fragLightSpace,vec3 lDir){
     vec3 pos = fragLightSpace.xyz/fragLightSpace.w;
     pos = pos * 0.5 + 0.5;
     
     float currentDepth = pos.z;
     
-    float bias = max(0.05 * (1.0 - dot(normal, lDir)), 0.005);
+    float bias = 0.0;// = max(0.05 * (1.0 - dot(normal, lDir)), 0.005);
 
     float shadow = 0.0;
     if(pos.z>1.0){
         //
-    }else if(dot(normal,lDir)<EPS){
-        shadow = 1.0;
-    }else{
+    }
+    //else if(dot(normal,lDir)<EPS){
+    //    shadow = 1.0;
+    //}
+    else{
         float pcfDepth;
         vec2 texelSize = shadowBlurArea*sqrt(SHADOW_SAMPLE_SQRT) / textureSize(texture_shadow,0);
         for(int i=0;i<4;i++){
@@ -86,18 +89,22 @@ float calcShadow(vec4 fragLightSpace,vec3 normal,vec3 lDir){
 
 float directional_lighting(float amb,float kd, float ks, float ns){    
     float ambient = amb;
-    float diffuse = max(dot(fNormal,lightDir),0.0) * kd;
-    
-    vec3 H = normalize(lightDir + viewDir);
-    float specular = pow(max(dot(fNormal,H),0),ns) * ks;
+    float diffuse = max(dot(vec3(0.0,1.0,0.0),lightDir),0.0) * kd;
 
-    return (ambient + (diffuse + specular)*(1.0-calcShadow(lightSpacePos,fNormal,lightDir)));
+    return (ambient + (diffuse)*(1.0-calcShadow(lightSpacePos,lightDir)));
 }
 
 void main()
 {   
+    vec4 color = texture(texture_grass,texCoords);
+    if(color.a < 0.1     ||
+       texCoords.y < 0.3 || 
+       texCoords.x<0.1   ||
+       texCoords.x>0.95  ||
+       abs(dot(viewDir,fNormal))<0.1)
+        discard;
     seed = dot(lightSpacePos,lightSpacePos);
-    vec3 result = GRASS_COLOR * directional_lighting(0.2,0.6,0.0,20.0) * green_weight;// * min(1.0,max(0.2,1.2*dot(lightDir,vec3(0.0,1.0,0.0))));
+    vec3 result = color.rgb * directional_lighting(0.2,0.6,0.0,20.0);// * min(1.0,max(0.2,1.2*dot(lightDir,vec3(0.0,1.0,0.0))));
 
     FragColor = vec4(result,1.0);//vec4((fginfo.normal+vec3(1.0))/2.0,1.0);
     

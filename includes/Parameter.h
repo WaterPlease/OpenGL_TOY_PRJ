@@ -4,7 +4,7 @@
 #include "glm_pre.h"
 
 extern int GROUND_TESS_LEVEL;
-extern int GRASS_TESS_LEVEL;
+extern int GRASS_INST_LEVEL;
 extern int WATER_TESS_LEVEL;
 extern float gamma;
 extern bool parameter_changed;
@@ -21,9 +21,13 @@ extern float water_waveLength;
 extern float water_steepness;
 extern float grass_waveLength;
 extern float grass_steepness;
+extern float grassProb;
+extern float grassSize;
+extern float grassCrit;
 
 extern float speed;
 extern float rotSpeed;
+extern float tSpeed;
 
 extern int shadowFactor;
 extern float shadowBlurJitter;

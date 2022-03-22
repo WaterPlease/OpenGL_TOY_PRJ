@@ -31,10 +31,7 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain.tes",nullptr);
 
     auto ptr_grass_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.vs",
-        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.fs",
-        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.tcs",
-        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.tes",
-        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.gs");
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\grass.fs");
     auto ptr_water_shader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.vs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.fs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\water.tcs",
@@ -50,6 +47,9 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
 
 void Engine::loop() {
     while (!glfwWindowShouldClose(window)) {
+        // Time update
+        timeMng.updateTime();
+
         ImGuiIO& io = ImGui::GetIO();
         if (!(io.WantCaptureKeyboard || io.WantCaptureMouse)) {
             engine_input_handler(window);
@@ -81,7 +81,7 @@ void Engine::loop() {
             ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
             if (ImGui::SliderInt("Ground tessLvl", &GROUND_TESS_LEVEL, 1, 64)||
-                ImGui::SliderInt("Grass tessLvl", &GRASS_TESS_LEVEL, 1, 64)||
+                ImGui::SliderInt("Grass tessLvl", &GRASS_INST_LEVEL, 32, 1024)||
                 ImGui::SliderInt("Water tessLvl", &WATER_TESS_LEVEL, 1, 64)){
                 parameter_changed = true;
             }
@@ -107,6 +107,9 @@ void Engine::loop() {
                 ImGui::SliderFloat("water time speed", &waterLambda, 0.0f, 1.0f)                ||
                 ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f)||
+                ImGui::SliderFloat("grass probability", &grassProb, 0.0f, 1.0f, "%.3f", 1.0f) || 
+                ImGui::SliderFloat("grass size", &grassSize, 0.0f, 1.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("grass gen crit", &grassCrit, 0.7f, 1.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat3("sun dir", &(sun->lightDir[0]), -1.0f, 1.0f, "%.3f", 1.0f)) {
                 parameter_changed = true;
 
@@ -115,8 +118,11 @@ void Engine::loop() {
         }
         {
             ImGui::Begin("Control setting");
-            ImGui::SliderFloat("move speed", &speed, 0.01f, 0.1f, "%.3f", 1.0f);
+            ImGui::SliderFloat("move speed", &speed, 1.0f, 100.0f, "%.3f", 1.0f);
             ImGui::SliderFloat("rotation speed", &rotSpeed, 0.01f, 1.0f, "%.3f", 1.0f);
+            if (ImGui::SliderFloat("time speed", &tSpeed, 0.0f, 5.0f, "%.3f", 1.0f)) {
+                timeMng.setSpeed((double)tSpeed);
+            }
             ImGui::End();
         }
         {
@@ -194,19 +200,17 @@ void engine_input_handler(GLFWwindow* window) {
     static bool   mouse_dragged = false;
     static double mouse_xpos, mouse_ypos;
     static double prev_xpos = 0.0, prev_ypos = 0.0;
-    static clock_t lastPPress = 0;
-    static clock_t prevTime = 0;
 
-    clock_t now = clock();
-    clock_t dt = now - prevTime;
-    prevTime = now;
+    static double lastPPress = 0.0;
+    double now = timeMng.getRealTime();
+    float dt = timeMng.getRealDelta();
 
     //Keyboard handle
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     
     bool isWPressed = glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS;
-    if (isWPressed && (now- lastPPress)>50) {
+    if (isWPressed && (now- lastPPress)>0.05) {
         if (wireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }

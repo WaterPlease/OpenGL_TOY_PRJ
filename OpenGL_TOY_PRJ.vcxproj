@@ -36,6 +36,7 @@
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Parameter.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
+    <ClCompile Include="src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Camera.h" />
@@ -69,9 +70,6 @@
     <None Include="shader\default.fs" />
     <None Include="shader\default.vs" />
     <None Include="shader\grass.fs" />
-    <None Include="shader\grass.gs" />
-    <None Include="shader\grass.tcs" />
-    <None Include="shader\grass.tes" />
     <None Include="shader\grass.vs" />
     <None Include="shader\hdrShader.fs" />
     <None Include="shader\postProcess.vs" />

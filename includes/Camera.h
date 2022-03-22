@@ -106,8 +106,8 @@ public:
 	}
 
 	inline void begin() {
-		time = glfwGetTime() * 0.3;
-		//time = 1.0;
+		time = timeMng.getEffectiveTime() * 0.3;
+		//time = 1.750;
 		glViewport(0, 0, shadow_resolution, shadow_resolution);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
