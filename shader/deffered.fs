@@ -1,10 +1,21 @@
 #version 430 core
 
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec4 gAlbedoSpec;
+out vec4 FragColor;
 
-#define GRASS_COLOR vec3(0.0,0.7,0.0)
+in vec2 TexCoords;
+
+uniform sampler2D gPosition;
+uniform sampler2D gNormal;
+uniform sampler2D gAlbedoSpec;
+uniform sampler2D texture_shadow;
+
+uniform vec3 sunDir;
+uniform vec3 lightColor;
+uniform vec3 viewPos;
+uniform mat4 lightSpaceMat;
+uniform float shadowBlurJitter;
+uniform float shadowBlurArea;
+
 
 #define EPS 0.001
 #define M_PI 3.1415926535897932384626433832795
@@ -13,25 +24,7 @@ layout (location = 2) out vec4 gAlbedoSpec;
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
-in vec3 worldPos;
-in vec2 texCoords;
-in vec4 lightSpacePos;
-in vec3 fNormal;
-in vec3 viewDir;
-
-uniform vec3 lightDir;
-uniform int shadowFactor;
-
-uniform sampler2D texture_shadow;
-uniform sampler2D texture_grass;
-
-out vec4 FragColor;
-
-vec3 cl;
-
-uniform float shadowBlurJitter;
-uniform float shadowBlurArea;
-
+// SHADOW MAPPING
 float seed;
 float rand(){
     seed = fract(sin(dot(vec2(seed), vec2(12.9898, 78.233))) * 43758.5453);
@@ -47,23 +40,20 @@ vec4 getJitOffset(int u, int v){
 vec2 dartSampleSpace(vec2 jit){
     return sqrt(abs(jit.y))*vec2(sin(jit.x*2.0*M_PI),cos(jit.x*2.0*M_PI));
 }
-bool fast;
-float calcShadow(vec4 fragLightSpace,vec3 lDir){
+float calcShadow(vec4 fragLightSpace,vec3 normal,vec3 lDir){
     vec3 pos = fragLightSpace.xyz/fragLightSpace.w;
     pos = pos * 0.5 + 0.5;
     
     float currentDepth = pos.z;
     
-    float bias = 0.0;// = max(0.05 * (1.0 - dot(normal, lDir)), 0.005);
+    float bias = max(0.05 * (1.0 - dot(normal, lDir)), 0.005);
 
     float shadow = 0.0;
     if(pos.z>1.0){
         //
-    }
-    //else if(dot(normal,lDir)<EPS){
-    //    shadow = 1.0;
-    //}
-    else{
+    }else if(dot(normal,lDir)<EPS){
+        shadow = 1.0;
+    }else{
         float pcfDepth;
         vec2 texelSize = shadowBlurArea*sqrt(SHADOW_SAMPLE_SQRT) / textureSize(texture_shadow,0);
         for(int i=0;i<4;i++){
@@ -74,7 +64,6 @@ float calcShadow(vec4 fragLightSpace,vec3 lDir){
             shadow += (currentDepth - bias) > pcfDepth ? (1.0/8.0):0.0;
         }
         if(shadow*(1-shadow)>EPS){
-            fast = false;
             shadow *= 1.0/8;
             for(int i=0;i<SHADOW_SAMPLE_SQRT-1;i++){
                 for(int j=0;j<4;j++){
@@ -92,25 +81,27 @@ float calcShadow(vec4 fragLightSpace,vec3 lDir){
     return smoothstep(0.0,1.0,shadow);
 }
 
-float directional_lighting(float amb,float kd, float ks, float ns){    
-    float ambient = amb;
-    float diffuse = max(dot(vec3(0.0,1.0,0.0),lightDir),0.0) * kd;
+void main(){
 
-    return (ambient + (diffuse)*(1.0-calcShadow(lightSpacePos,lightDir)));
-}
+    vec3 FragPos = texture(gPosition, TexCoords).rgb;
+    vec3 Normal = texture(gNormal, TexCoords).rgb;
+    vec3 Albedo = texture(gAlbedoSpec, TexCoords).rgb;
+    float Specular = texture(gAlbedoSpec, TexCoords).a;
+    
+    vec3 lighting;
+    if(length(Normal)<EPS){
+        lighting = Albedo * lightColor;
+    }else{
+        seed = length(FragPos);
+        lighting = Albedo * 0.1; // hard-coded ambient component
+        vec3 viewDir = normalize(viewPos - FragPos);
+        vec3 lightDir = normalize(sunDir);
+        vec3 halfWay = normalize(viewDir+lightDir);
 
-void main()
-{   
-    vec4 color = texture(texture_grass,texCoords);
-    if(color.a < 0.1     ||
-       texCoords.y < 0.3 || 
-       texCoords.x<0.1   ||
-       texCoords.x>0.95  ||
-       abs(dot(viewDir,fNormal))<0.1)
-        discard;
+        vec3 diffuse = (max(dot(Normal, lightDir), 0.0) * Albedo * lightColor + lightColor * max(pow(dot(Normal,halfWay),40.0),0.0)*Specular) * (1.0-calcShadow(lightSpaceMat * vec4(FragPos,1.0),Normal,lightDir));
+        lighting += diffuse;
+    }
 
-    gPosition = worldPos;
-    gNormal = vec3(0.0,1.0,0.0);
-    gAlbedoSpec.rgb = color.rgb;
-    gAlbedoSpec.a   = 0.0;
+    
+    FragColor = vec4(lighting, 1.0);
 }

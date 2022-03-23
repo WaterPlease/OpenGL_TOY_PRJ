@@ -248,7 +248,7 @@ public:
         // 2. compile shaders
         unsigned int compute;
         // vertex shader
-        compute = glCreateShader(GL_VERTEX_SHADER);
+        compute = glCreateShader(GL_COMPUTE_SHADER);
         glShaderSource(compute, 1, &cShaderCode, NULL);
         glCompileShader(compute);
         checkCompileErrors(compute, "VERTEX");

@@ -1,5 +1,9 @@
 #version 430 core
 
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
+
 #define waterColor vec3(0.,0.624,0.882)
 
 #define EPS 0.001
@@ -107,13 +111,12 @@ float directional_lighting(vec3 normal,float amb,float kd, float ks, float ns){
 
 void main()
 {   
-    seed = dot(fs_in.FragPos,fs_in.FragPos);
-
     vec3 normal = texture(texture_normal, vec3(uvFactorWater * fs_in.TexCoords,time*waterTimeFactor)).rgb;
     normal = 2.0*normal-vec3(1.0);
-    //normal = vec3(0.0,0.0,1.0);
     normal = normalize(fs_in.TBN * normal);
-    vec3 color = waterColor*directional_lighting(normal,0.1,0.6,1.0,42.0);
-    color += texture(texture_skybox,reflect(fs_in.FragPos-camPos,normal)).rgb * 0.4;
-    FragColor = vec4(color,0.6);
+
+    gPosition = fs_in.FragPos;
+    gNormal = normal;
+    gAlbedoSpec.rgb = waterColor;
+    gAlbedoSpec.a   = 1.0;
 }

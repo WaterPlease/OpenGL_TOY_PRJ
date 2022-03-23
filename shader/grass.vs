@@ -12,8 +12,7 @@ uniform sampler2D texture_height;
 uniform float max_height;
 uniform float landSize;
 uniform int axisCount;
-uniform float grassWidth;
-uniform float grassHeight;
+uniform float grassSize;
 uniform vec3 camFront;
 uniform float cosHalfDiag;
 uniform float waterLevel;
@@ -26,7 +25,9 @@ uniform float grassProb;
 uniform float steepness;
 uniform float waveLength;
 uniform float time;
+uniform vec3 lightDir;
 
+out vec3 worldPos;
 out vec2 texCoords;
 out vec4 lightSpacePos;
 out vec3 fNormal;
@@ -85,7 +86,7 @@ vec3 multi_trochoidal(vec3 v,float weight){
 void main(void)
 {
     bool underWater = false;
-    vec3 vPos = aPos;
+    vec3 vPos = aPos*grassSize;
     float rad = rand(vec2(gl_InstanceID));
     float r1 = rand(vec2(rad));
     float r2 = rand(vec2(r1));
@@ -154,6 +155,9 @@ void main(void)
         lightSpacePos = lightSpaceMat * globalPos;
         gl_Position = projection * view * globalPos;
         fNormal = normalize((rot * vec4(aNormal,0.0)).xyz);
+        //if(dot(fNormal,lightDir)<0)
+        //    fNormal = -fNormal;
         viewDir = normalize(camPos-globalPos.xyz);
+        worldPos = globalPos.xyz;
     }    
 }

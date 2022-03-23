@@ -41,7 +41,7 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.fs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tcs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tes", nullptr);
-    objs.push_back(new TerrainObject(0.5f,100.0,ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
+    objs.push_back(new TerrainObject(0.5f,landSize,ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
     //objs.push_back(new TerrainObject(0, 0, 10.0f));
 }
 
@@ -108,7 +108,7 @@ void Engine::loop() {
                 ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f)||
                 ImGui::SliderFloat("grass probability", &grassProb, 0.0f, 1.0f, "%.3f", 1.0f) || 
-                ImGui::SliderFloat("grass size", &grassSize, 0.0f, 1.0f, "%.3f", 1.0f) ||
+                ImGui::SliderFloat("grass size", &grassSize, 0.0f, 5.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat("grass gen crit", &grassCrit, 0.7f, 1.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat3("sun dir", &(sun->lightDir[0]), -1.0f, 1.0f, "%.3f", 1.0f)) {
                 parameter_changed = true;
@@ -120,7 +120,7 @@ void Engine::loop() {
             ImGui::Begin("Control setting");
             ImGui::SliderFloat("move speed", &speed, 1.0f, 100.0f, "%.3f", 1.0f);
             ImGui::SliderFloat("rotation speed", &rotSpeed, 0.01f, 1.0f, "%.3f", 1.0f);
-            if (ImGui::SliderFloat("time speed", &tSpeed, 0.0f, 5.0f, "%.3f", 1.0f)) {
+            if (ImGui::SliderFloat("time speed", &tSpeed, -3.0f, 3.0f, "%.3f", 1.0f)) {
                 timeMng.setSpeed((double)tSpeed);
             }
             ImGui::End();
@@ -131,12 +131,22 @@ void Engine::loop() {
             ImGui::End();
         }
         {
-            ImGui::Begin("raw screen");
+            ImGui::Begin("Render path");
+            ImGui::Text("Before lighting pass");
+            ImGui::Image((ImTextureID)(renderer.defferedPIPE->gAlbedoSpec), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Text("HDR Bloom filter - extract");
+            ImGui::Image((ImTextureID)(renderer.hdrPIPE->extractTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Text("HDR Bloom filter - blurred");
+            ImGui::Image((ImTextureID)(renderer.hdrPIPE->blurredTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Text("Before tone mapping");
             ImGui::Image((ImTextureID)(renderer.hdrPIPE->colorTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
             ImGui::End();
         }
 
 
+        if (wireMode) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
         // object rendering
         for (auto iter = objs.begin(); iter != objs.end(); iter++) {
             BaseObject* ptr_obj = *iter;
@@ -166,6 +176,9 @@ void Engine::loop() {
                 //sunLightDir = glm::normalize(sunLightDir+glm::vec3(0.0f,0.5f,0.0f));
                 terrain.draw();
             }
+        }
+        if (wireMode) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
 

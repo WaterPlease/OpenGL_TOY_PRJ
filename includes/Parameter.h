@@ -9,6 +9,7 @@ extern int WATER_TESS_LEVEL;
 extern float gamma;
 extern bool parameter_changed;
 
+extern float landSize;
 extern float waterSize;
 extern float waterLambda;
 extern float waterLevel;

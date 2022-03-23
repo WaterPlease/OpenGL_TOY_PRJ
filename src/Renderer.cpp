@@ -46,7 +46,6 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
 
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_MULTISAMPLE);
     glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_3D);
 
@@ -132,7 +131,6 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
     skyboxShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\skybox.vs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\skybox.fs");
 
-    std::cout << "HDRPIPE INIT\n";
-    hdrPIPE = new HDRPIPE(this->screenRes,0);
-    std::cout << "HDRPIPE GEN\n";
+    hdrPIPE = new HDRPIPE(this->screenRes, 0);
+    defferedPIPE = new DEFFEREDPIPE(this->screenRes,hdrPIPE->fbo);
 }

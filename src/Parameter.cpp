@@ -7,6 +7,8 @@ float gamma = 2.2f;
 bool parameter_changed = true;
 
 glm::vec3 sunLightDir(0.0f,1.0f,0.0f);
+
+float landSize = 100.0f;
 float waterSize = 1.0f;
 float waterLambda = 0.1;
 float waterLevel = 2.0f;

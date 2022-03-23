@@ -14,8 +14,8 @@
 #include "GUI.h"
 
 class RenderPIPE {
-	GLuint fbo;
 public:
+	GLuint fbo;
 	RenderPIPE() {
 		glGenFramebuffers(1, &fbo);
 	}
@@ -38,9 +38,14 @@ class HDRPIPE :public RenderPIPE {
 	GLuint quadVAO;
 	GLuint quadVBO;
 	Shader* hdrShader;
+	Shader* extractShader;
+	Shader* blurShader;
+	glm::uvec2 screenRes;
 public:
 	GLuint colorTexture;
-	HDRPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFBO = 0) :RenderPIPE(), nextFBO(nextPIPEFBO) {
+	GLuint extractTexture;
+	GLuint blurredTexture;
+	HDRPIPE(const glm::uvec2& _screenRes, GLuint nextPIPEFBO = 0) :RenderPIPE(), nextFBO(nextPIPEFBO),screenRes(_screenRes) {
 
 		begin();
 
@@ -48,13 +53,143 @@ public:
 		glBindTexture(GL_TEXTURE_2D, colorTexture);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+		glGenRenderbuffers(1, &rbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenRes.x, screenRes.y);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+			exit(1);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//end();
+		float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
+		};
+
+		// bloom init
+		glGenTextures(1, &extractTexture);
+		glBindTexture(GL_TEXTURE_2D, extractTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glGenTextures(1, &blurredTexture);
+		glBindTexture(GL_TEXTURE_2D, blurredTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		extractShader = new ComputeShader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\extract.cs");
+		blurShader = new ComputeShader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\blur.cs");
+
+
+		glGenVertexArrays(1, &quadVAO);
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+		std::cout << "HDR SHADER\n";
+		hdrShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\postProcess.vs",
+			"C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\hdrShader.fs");
+		std::cout << "HDR SHADER DONE\n";
+	}
+
+	void begin() {
+		RenderPIPE::begin();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void end() {
+		glBindFramebuffer(GL_FRAMEBUFFER, nextFBO);
+
+		extractShader->use();
+		glBindImageTexture(0, colorTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(1, extractTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		glDispatchCompute(screenRes.x / 32, screenRes.y / 18,1);
+		
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+		blurShader->use();
+		glBindImageTexture(0, extractTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(1, blurredTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		glDispatchCompute(screenRes.x / 32, screenRes.y / 18, 1);
+
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		hdrShader->use();
+		if (parameter_changed) {
+			hdrShader->setFloat("gamma", gamma);
+		}
+
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(hdrShader->ID, "screenTexture"), 0);
+		glBindTexture(GL_TEXTURE_2D, colorTexture);
+
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(hdrShader->ID, "bloomTexture"), 1);
+		glBindTexture(GL_TEXTURE_2D, blurredTexture);
+
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+	}
+};
+class DEFFEREDPIPE :public RenderPIPE {
+	GLuint rbo;
+	GLuint nextFBO;
+	GLuint quadVAO;
+	GLuint quadVBO;
+	Shader* lightingShader;
+public:
+	GLuint gPosition,gNormal,gAlbedoSpec;//alpha value of albedo buffer is specular value.
+	DEFFEREDPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFBO = 0) :RenderPIPE(), nextFBO(nextPIPEFBO) {
+
+		begin();
+
+		glGenTextures(1, &gPosition);
+		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+
+		glGenTextures(1, &gNormal);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+
+		glGenTextures(1, &gAlbedoSpec);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+
+		unsigned int attachments[] = {GL_COLOR_ATTACHMENT0 ,GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+		glDrawBuffers(3, attachments);
 
 		glGenRenderbuffers(1, &rbo);
 		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
@@ -89,10 +224,8 @@ public:
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-		std::cout << "HDR SHADER\n";
-		hdrShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\postProcess.vs",
-			"C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\hdrShader.fs");
-		std::cout << "HDR SHADER DONE\n";
+		lightingShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\postProcess.vs",
+			"C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\deffered.fs");
 	}
 
 	void begin() {
@@ -104,14 +237,28 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, nextFBO);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		hdrShader->use();
+		lightingShader->use();
 		if (parameter_changed) {
-			hdrShader->setFloat("gamma", gamma);
+			lightingShader->setFloat("shadowBlurJitter", shadowBlurJitter);
+			lightingShader->setFloat("shadowBlurArea", shadowBlurArea);
 		}
+		lightingShader->setVec3("sunDir", sun->lightDir);
+		lightingShader->setVec3("lightColor", sun->color);
+		lightingShader->setVec3("viewPos", mainCam->pos);
+		lightingShader->setMat4("lightSpaceMat", sun->lightSpaceMat(landSize));;
 
 		glActiveTexture(GL_TEXTURE0);
-		glUniform1i(glGetUniformLocation(hdrShader->ID, "screenTexture"), 0);
-		glBindTexture(GL_TEXTURE_2D, colorTexture);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "gPosition"), 0);
+		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "gNormal"), 1);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
+		glActiveTexture(GL_TEXTURE2);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "gAlbedoSpec"), 2);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+		glActiveTexture(GL_TEXTURE3);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "texture_shadow"), 3);
+		glBindTexture(GL_TEXTURE_2D, sun->depthMap);
 
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -126,16 +273,18 @@ class Renderer {
 
 	
 public:
+	DEFFEREDPIPE* defferedPIPE;
 	HDRPIPE* hdrPIPE;
 	glm::uvec2 screenRes = glm::uvec2(800, 600);
 	Renderer(const char* title,int width, int height);
 	glm::vec4 clearColor;
 
 	inline void startFrameRender(){
-		hdrPIPE->begin();
+		defferedPIPE->begin();
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 	}
 	inline void postProcess() {
+		defferedPIPE->end();
 		hdrPIPE->end();
 	}
 	inline void endFrameRender(){

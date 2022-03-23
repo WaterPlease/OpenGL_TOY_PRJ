@@ -1,7 +1,8 @@
 #version 430 core
 
-#define GRASS_COLOR vec3(0.0,1.0,0.0)
-#define ROCK_COLOR vec3(0.33,0.25,0.14)
+layout (location = 0) out vec3 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
 
 #define EPS 0.001
 #define M_PI 3.1415926535897932384626433832795
@@ -134,31 +135,31 @@ void main()
         
     vec3 upVec = vec3(0.0,1.0,0.0);
     float planeWeight = clamp(dot(upVec,fginfo.TBN*vec3(0.0,0.0,1.0)),0.0,1.0);
-    
-    shadowStr = -1.0;
-    fast = true;
-
-    vec3 lighting_rock = vec3(directional_lighting(texture_normal_rock,texture_spec_rock,texture_ao_rock,uvFactorRock
-    ,lightDir,camPos-fginfo.pos,0.2,Kd,Ks,Ns));
-    vec3 color_rock = texture(texture_diffuse_rock,uvFactorRock*fginfo.uv).xyz;
-
-    vec3 lighting_grass = vec3(directional_lighting(texture_normal_grass,texture_spec_grass,texture_ao_grass,uvFactorGrass
-    ,lightDir,camPos-fginfo.pos,0.2,Kd,Ks,Ns));
-    vec3 color_grass = texture(texture_diffuse_grass,uvFactorGrass*fginfo.uv).xyz;
-
-    vec3 result_rock = color_rock * lighting_rock;
-    vec3 result_grass= color_grass * lighting_grass;
 
     float rockWeight = smoothstep(0.0,1.0,(rockStart-planeWeight)/blend);
 
-    vec3 result = mix(result_grass, result_rock,rockWeight);
+    vec3 normal_grass = texture(texture_normal_grass,uvFactorGrass*fginfo.uv).rgb;
+    normal_grass = normal_grass * 2.0 - 1.0;
+    normal_grass = normalize(fginfo.TBN * normal_grass);
+    vec3 normal_rock = texture(texture_normal_rock,uvFactorRock*fginfo.uv).rgb;
+    normal_rock = normal_rock * 2.0 - 1.0;
+    normal_rock = normalize(fginfo.TBN * normal_rock);
+    vec3 normal = mix(normal_grass, normal_rock,rockWeight);
+
+    vec3 color_grass = texture(texture_diffuse_grass,uvFactorGrass*fginfo.uv).rgb;
+    vec3 color_rock = texture(texture_diffuse_rock,uvFactorRock*fginfo.uv).rgb;
+    vec3 albedo = mix(color_grass, color_rock,rockWeight);
+
+    float spec_grass = texture(texture_spec_grass,uvFactorGrass*fginfo.uv).r;
+    float spec_rock  = texture(texture_spec_rock,uvFactorRock*fginfo.uv).r;
+    float spec = mix(spec_grass, spec_rock,rockWeight);
+   
     
-    FragColor = vec4(result,1.0);//vec4(fginfo.TBN*vec3(0.0,0.0,1.0),1.0);
-    //if(shadowStr<1.0){
-    //    if(fast){
-    //        FragColor = vec4(0.0,0.0,1.0,1.0);
-    //    }else{
-    //       FragColor = vec4(1.0,0.0,0.0,1.0)*(1-shadowStr);
-    //    }
-    //}
+    gPosition = fginfo.pos;
+
+    gNormal = normalize(normal);
+
+    gAlbedoSpec.rgb = albedo.rgb;
+    gAlbedoSpec.a = spec;
+
 }

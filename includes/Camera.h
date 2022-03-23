@@ -79,8 +79,10 @@ class Sun{
 	GLuint scrX;
 	GLuint scrY;
 	double time;
+	glm::mat4 transMat;
 public:
 	glm::vec3 lightDir;
+	glm::vec3 color;
 	GLuint depthMap;
 	GLuint shadow_resolution;
 	Sun(const glm::vec3& _lDir,GLuint _resolution,GLuint _scrX, GLuint _scrY):lightDir(_lDir),shadow_resolution(_resolution),scrX(_scrX),scrY(_scrY) {
@@ -88,7 +90,7 @@ public:
 		glGenTextures(1, &depthMap);
 		
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,shadow_resolution,shadow_resolution,0, GL_DEPTH_COMPONENT,GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,shadow_resolution,shadow_resolution,0, GL_DEPTH_COMPONENT,GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -107,6 +109,13 @@ public:
 
 	inline void begin() {
 		time = timeMng.getEffectiveTime() * 0.3;
+		glm::vec3 lightPos;
+		lightPos.x = sin(time) * 3.0f;
+		lightPos.z = cos(time) * 2.0f;
+		lightPos.y = 1.5f + cos(time) * 1.0f;
+		lightDir = glm::normalize(lightPos);
+		float highnoon = clamp(lightDir.y, 0.0f, 1 / 10.0f) * 10.0f;
+		color = glm::mix(glm::vec3(1.0f), glm::vec3(0.99f, 0.80, 0.44f), highnoon);
 		//time = 1.750;
 		glViewport(0, 0, shadow_resolution, shadow_resolution);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
@@ -120,16 +129,11 @@ public:
 	}
 	inline glm::mat4 getOrtho(float landSize) {
 		landSize *= SQRT2 * 0.5f;
-		float wFactor = 1.3f;
+		float wFactor = 1.0f;
 		float hFactor = 1.0f;
 		return glm::ortho(-landSize*wFactor,landSize*wFactor,-landSize*hFactor,landSize*hFactor,0.0f, landSize*3.0f);
 	}
 	inline glm::mat4 getViewMat(float landSize) {
-		glm::vec3 lightPos;
-		lightPos.x = sin(time) * 3.0f;
-		lightPos.z = cos(time) * 2.0f;
-		lightPos.y = 1.5f + cos(time) * 1.0f;
-		lightDir = glm::normalize(lightPos);
 		//lightDir = glm::normalize(-mainCam->front);
 		glm::vec3 up(0.0, 1.0, 0.0);
 		up = normalize(up);

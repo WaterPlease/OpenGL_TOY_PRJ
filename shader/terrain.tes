@@ -31,16 +31,17 @@ vec2 getUV(vec3 pos,float minVal,float maxVal){
 }
 
 float getHeight(vec2 uv){
-    //return max_height * texture(texture_height,uv).x;
-    return max_height * (texture(texture_height,uv).x
-                        +texture(texture_height,uv-vec2(-EPS,EPS)).x
+    return max_height * (texture(texture_height,uv).x * 0.25
+                        
+                        +(texture(texture_height,uv-vec2(-EPS,EPS)).x
                         +texture(texture_height,uv+vec2(-EPS,EPS)).x
                         +texture(texture_height,uv-vec2(EPS,EPS)).x
-                        +texture(texture_height,uv+vec2(EPS,EPS)).x
-                        +texture(texture_height,uv-vec2(EPS,0.0)).x
+                        +texture(texture_height,uv+vec2(EPS,EPS)).x) * 0.0625
+
+                        +(texture(texture_height,uv-vec2(EPS,0.0)).x
                         +texture(texture_height,uv+vec2(EPS,0.0)).x
                         +texture(texture_height,uv-vec2(0.0,EPS)).x
-                        +texture(texture_height,uv+vec2(0.0,EPS)).x)/9.0;
+                        +texture(texture_height,uv+vec2(0.0,EPS)).x) * 0.125 );
 }
 
 void main(void){

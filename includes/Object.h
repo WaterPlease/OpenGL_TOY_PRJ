@@ -102,7 +102,7 @@ class TerrainObject : public BaseObject {
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 		textureHeight  = TextureFromFile_ForHeight("terrain_height.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
-		textureGrass = TextureFromFile("grass.png",
+		textureGrass = TextureFromFile_NEAREST("grass.png",
 			std::string("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model"));
 
 		std::vector<string> pathLst;
@@ -281,8 +281,7 @@ public:
 			grass_shader->setInt("axisCount", GRASS_INST_LEVEL);
 			grass_shader->setFloat("patchSize", grass_patchSize);
 			grass_shader->setFloat("landSize", landSize);
-			grass_shader->setFloat("grassWidth", grassSize);
-			grass_shader->setFloat("grassHeight", grassSize); 
+			grass_shader->setFloat("grassSize", grassSize);
 			grass_shader->setFloat("grassProb", grassProb);
 			grass_shader->setFloat("grassCrit", grassCrit);
 			grass_shader->setFloat("max_height", max_height);
@@ -321,7 +320,6 @@ public:
 
 		glEnable(GL_CULL_FACE);
 
-		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		water_shader->use();
 		if (parameter_changed) {

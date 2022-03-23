@@ -217,13 +217,19 @@
     <None Include="shader\skybox.fs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\blur.cs">
+    <None Include="shader\extract.cs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
     <None Include="shader\postProcess.vs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
     <None Include="shader\hdrShader.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\deffered.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\blur.cs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
   </ItemGroup>
