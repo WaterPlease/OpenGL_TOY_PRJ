@@ -35,4 +35,9 @@ extern float shadowBlurJitter;
 extern float shadowBlurArea;
 
 extern unsigned int texture_skybox;
+
+extern float ssr_maxDistance;
+extern float ssr_resolution;
+extern int   ssr_steps;
+extern float ssr_thickness;
 #endif

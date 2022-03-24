@@ -1,7 +1,7 @@
 #version 430 core
 
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
 
 #define EPS 0.001
@@ -48,6 +48,7 @@ in FGINFO
     vec3 pos;
     vec4 lightSpacePos;
 }fginfo;
+uniform mat4 view;
 
 float seed;
 float rand(){
@@ -155,10 +156,11 @@ void main()
     float spec = mix(spec_grass, spec_rock,rockWeight);
    
     
-    gPosition = fginfo.pos;
+    gPosition.xyz = (view*vec4(fginfo.pos,1.0)).xyz;
+    gPosition.w = 0.0;
 
-    gNormal = normalize(normal);
-
+    gNormal.xyz = normalize((view*vec4(normalize(normal),0.0)).xyz);
+    gNormal.w;
     gAlbedoSpec.rgb = albedo.rgb;
     gAlbedoSpec.a = spec;
 

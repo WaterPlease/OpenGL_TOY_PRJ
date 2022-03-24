@@ -232,5 +232,8 @@
     <None Include="shader\blur.cs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
+    <None Include="shader\ssr.cs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

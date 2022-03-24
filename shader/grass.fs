@@ -1,7 +1,7 @@
 #version 430 core
 
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
 
 #define GRASS_COLOR vec3(0.0,0.7,0.0)
@@ -18,6 +18,7 @@ in vec2 texCoords;
 in vec4 lightSpacePos;
 in vec3 fNormal;
 in vec3 viewDir;
+uniform mat4 view;
 
 uniform vec3 lightDir;
 uniform int shadowFactor;
@@ -105,12 +106,13 @@ void main()
     if(color.a < 0.1     ||
        texCoords.y < 0.3 || 
        texCoords.x<0.1   ||
-       texCoords.x>0.95  ||
-       abs(dot(viewDir,fNormal))<0.1)
+       texCoords.x>0.95)//  ||
+       //abs(dot(viewDir,fNormal))<0.1)
         discard;
 
-    gPosition = worldPos;
-    gNormal = vec3(0.0,1.0,0.0);
+    gPosition.xyz = (view*vec4(worldPos,1.0)).xyz;
+    gPosition.w = 0.0;
+    gNormal.xyz = normalize((view*vec4(0.0,1.0,0.0,0.0)).xyz);
     gAlbedoSpec.rgb = color.rgb;
     gAlbedoSpec.a   = 0.0;
 }

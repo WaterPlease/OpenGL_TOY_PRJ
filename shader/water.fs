@@ -1,7 +1,7 @@
 #version 430 core
 
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec4 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;
 
 #define waterColor vec3(0.,0.624,0.882)
@@ -21,6 +21,7 @@ in VS_OUT{
     mat3 TBN;
     vec4 lightSpacePos;
 } fs_in;
+uniform mat4 view;
 
 uniform sampler3D texture_normal;
 uniform samplerCube texture_skybox;
@@ -113,10 +114,13 @@ void main()
 {   
     vec3 normal = texture(texture_normal, vec3(uvFactorWater * fs_in.TexCoords,time*waterTimeFactor)).rgb;
     normal = 2.0*normal-vec3(1.0);
+    normal = normal * 0.3 + 0.7 * vec3(0.0,0.0,1.0);
     normal = normalize(fs_in.TBN * normal);
+    //normal = vec3(0.0,1.0,0.0);
 
-    gPosition = fs_in.FragPos;
-    gNormal = normal;
+    gPosition.xyz = (view*vec4(fs_in.FragPos,1.0)).xyz;
+    gPosition.w = 1.0;
+    gNormal.xyz = normalize((view*vec4(normal,0.0)).xyz);
     gAlbedoSpec.rgb = waterColor;
     gAlbedoSpec.a   = 1.0;
 }

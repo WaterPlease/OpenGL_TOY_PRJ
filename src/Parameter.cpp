@@ -33,3 +33,8 @@ float shadowBlurJitter = 1.256;
 float shadowBlurArea = 2.6232f;
 
 unsigned int texture_skybox;
+
+float ssr_maxDistance = 8.0f;
+float ssr_resolution = 0.3f;
+int   ssr_steps = 5;
+float ssr_thickness = 0.5f;

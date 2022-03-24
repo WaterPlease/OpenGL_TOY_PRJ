@@ -46,6 +46,7 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
 }
 
 void Engine::loop() {
+    std::cout << "RENDER START\n";
     while (!glfwWindowShouldClose(window)) {
         // Time update
         timeMng.updateTime();
@@ -78,8 +79,6 @@ void Engine::loop() {
         {
             ImGui::Begin("Graphic setting");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-
             if (ImGui::SliderInt("Ground tessLvl", &GROUND_TESS_LEVEL, 1, 64)||
                 ImGui::SliderInt("Grass tessLvl", &GRASS_INST_LEVEL, 32, 1024)||
                 ImGui::SliderInt("Water tessLvl", &WATER_TESS_LEVEL, 1, 64)){
@@ -88,6 +87,13 @@ void Engine::loop() {
             if (ImGui::SliderFloat("shadowBlur jit", &shadowBlurJitter, 0.0f, 5.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat("shadowBlur area", &shadowBlurArea, 0.1f, 10.0f, "%.3f", 1.0f) ||
                 ImGui::SliderFloat("gamma", &gamma, 0.0f, 3.0f, "%.3f", 1.0f)) {
+                parameter_changed = true;
+            }
+            ImGui::Text("SSR setting");
+            if (ImGui::InputFloat("ssr_maxDistance", &ssr_maxDistance) ||
+                ImGui::InputFloat("ssr_resolution", &ssr_resolution) ||
+                ImGui::InputInt("ssr_steps", &ssr_steps) ||
+                ImGui::InputFloat("ssr_thickness", &ssr_thickness)) {
                 parameter_changed = true;
             }
             ImGui::ColorEdit3("clear color", (float*)&(renderer.clearColor[0])); // Edit 3 floats representing a color
@@ -134,8 +140,8 @@ void Engine::loop() {
             ImGui::Begin("Render path");
             ImGui::Text("Before lighting pass");
             ImGui::Image((ImTextureID)(renderer.defferedPIPE->gAlbedoSpec), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::Text("HDR Bloom filter - extract");
-            ImGui::Image((ImTextureID)(renderer.hdrPIPE->extractTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Text("Before SSR PIPE");
+            //ImGui::Image((ImTextureID)(renderer.ssrPIPE->texture_color), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
             ImGui::Text("HDR Bloom filter - blurred");
             ImGui::Image((ImTextureID)(renderer.hdrPIPE->blurredTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
             ImGui::Text("Before tone mapping");
@@ -143,7 +149,7 @@ void Engine::loop() {
             ImGui::End();
         }
 
-
+        //std::cout << "STG 0\n";
         if (wireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
@@ -180,19 +186,19 @@ void Engine::loop() {
         if (wireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
-
+        //std::cout << "STG 1\n";
 
         // skybox rendering
         renderer.drawSkybox();
-
+        //std::cout << "STG 2\n";
         // post process
         renderer.postProcess();
-
+        //std::cout << "STG 3\n";
         // GUI render on opengl screen
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         renderer.endFrameRender();
-
+        //std::cout << "STG 4\n";
         glfwPollEvents();
     }
     ImGui_ImplOpenGL3_Shutdown();

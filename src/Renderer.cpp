@@ -130,7 +130,12 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
 
     skyboxShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\skybox.vs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\skybox.fs");
-
+    
     hdrPIPE = new HDRPIPE(this->screenRes, 0);
-    defferedPIPE = new DEFFEREDPIPE(this->screenRes,hdrPIPE->fbo);
+    ssrPIPE = new SSRPIPE(this->screenRes, hdrPIPE->fbo);
+    defferedPIPE = new DEFFEREDPIPE(this->screenRes,ssrPIPE->fbo);
+    //defferedPIPE = new DEFFEREDPIPE(this->screenRes, hdrPIPE->fbo);
+
+    // PIPELINE binding
+    ssrPIPE->gBufferBind(defferedPIPE->gPosition, defferedPIPE->gNormal);
 }

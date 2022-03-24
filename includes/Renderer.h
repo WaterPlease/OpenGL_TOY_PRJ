@@ -242,9 +242,10 @@ public:
 			lightingShader->setFloat("shadowBlurJitter", shadowBlurJitter);
 			lightingShader->setFloat("shadowBlurArea", shadowBlurArea);
 		}
-		lightingShader->setVec3("sunDir", sun->lightDir);
+		lightingShader->setVec3("sunDir", glm::vec3(mainCam->getViewMat()*glm::vec4(sun->lightDir,0.0)));
 		lightingShader->setVec3("lightColor", sun->color);
 		lightingShader->setVec3("viewPos", mainCam->pos);
+		lightingShader->setMat4("inverseViewMat", glm::inverse(mainCam->getViewMat()));
 		lightingShader->setMat4("lightSpaceMat", sun->lightSpaceMat(landSize));;
 
 		glActiveTexture(GL_TEXTURE0);
@@ -265,6 +266,110 @@ public:
 		glBindVertexArray(0);
 	}
 };
+
+class SSRPIPE :public RenderPIPE {
+	GLuint rbo;
+	GLuint nextFBO;
+	GLuint quadVAO;
+	GLuint quadVBO;
+	glm::uvec2 gBufferImages;
+	Shader* ssrShader;
+	float RES_X, RES_Y;
+public:
+	GLuint texture_color;
+	SSRPIPE(const glm::uvec2& screenRes,GLuint nextPIPEFBO = 0) :RenderPIPE(), nextFBO(nextPIPEFBO) {
+		
+		begin();
+
+		glGenTextures(1, &texture_color);
+		glBindTexture(GL_TEXTURE_2D, texture_color);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_color, 0);
+
+		glGenRenderbuffers(1, &rbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenRes.x, screenRes.y);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+			exit(1);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//end();
+		float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
+		};
+
+		glGenVertexArrays(1, &quadVAO);
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+		ssrShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\postProcess.vs",
+			"C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\ssr.fs");
+
+		RES_X = screenRes.x;
+		RES_Y = screenRes.y;
+	}
+
+	void gBufferBind(GLuint gPos, GLuint gNormal) {
+		gBufferImages = glm::uvec2(gPos,gNormal);
+	}
+
+	void begin() {
+		RenderPIPE::begin();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void end() {
+		glBindFramebuffer(GL_FRAMEBUFFER, nextFBO);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		ssrShader->use();
+		if (parameter_changed) {
+			ssrShader->setFloat("RES_X", RES_X);
+			ssrShader->setFloat("RES_Y", RES_Y);
+			ssrShader->setFloat("maxDistance", ssr_maxDistance);
+			ssrShader->setFloat("resolution", ssr_resolution);
+			ssrShader->setFloat("thickness", ssr_thickness);
+			ssrShader->setInt("steps", ssr_steps);
+		}
+		ssrShader->setVec3("camPos", mainCam->pos);
+		ssrShader->setVec3("camFront", glm::vec3(mainCam->getViewMat()*glm::vec4(mainCam->front,0.0)));
+		ssrShader->setMat4("Prjmat", mainCam->getPerspectiveMat());
+
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(ssrShader->ID, "image_position"), 0);
+		glBindTexture(GL_TEXTURE_2D, gBufferImages[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glUniform1i(glGetUniformLocation(ssrShader->ID, "image_normal"), 1);
+		glBindTexture(GL_TEXTURE_2D, gBufferImages[1]);
+		glActiveTexture(GL_TEXTURE2);
+		glUniform1i(glGetUniformLocation(ssrShader->ID, "image_color"), 2);
+		glBindTexture(GL_TEXTURE_2D, texture_color);
+
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+	}
+};
+
 class Renderer {
 	GLuint skyboxTexture;
 	GLuint skyboxVAO, skyboxVBO;
@@ -274,8 +379,9 @@ class Renderer {
 	
 public:
 	DEFFEREDPIPE* defferedPIPE;
+	SSRPIPE* ssrPIPE;
 	HDRPIPE* hdrPIPE;
-	glm::uvec2 screenRes = glm::uvec2(800, 600);
+	glm::uvec2 screenRes;
 	Renderer(const char* title,int width, int height);
 	glm::vec4 clearColor;
 
@@ -285,6 +391,7 @@ public:
 	}
 	inline void postProcess() {
 		defferedPIPE->end();
+		ssrPIPE->end();
 		hdrPIPE->end();
 	}
 	inline void endFrameRender(){

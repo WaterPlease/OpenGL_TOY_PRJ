@@ -12,6 +12,7 @@ uniform sampler2D texture_shadow;
 uniform vec3 sunDir;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
+uniform mat4 inverseViewMat;
 uniform mat4 lightSpaceMat;
 uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
@@ -83,10 +84,16 @@ float calcShadow(vec4 fragLightSpace,vec3 normal,vec3 lDir){
 
 void main(){
 
-    vec3 FragPos = texture(gPosition, TexCoords).rgb;
-    vec3 Normal = texture(gNormal, TexCoords).rgb;
-    vec3 Albedo = texture(gAlbedoSpec, TexCoords).rgb;
-    float Specular = texture(gAlbedoSpec, TexCoords).a;
+    vec4 gPositionInfo = texture(gPosition, TexCoords);
+    vec3 FragPos = gPositionInfo.rgb;
+    float reflection = gPositionInfo.a;
+
+    vec4 gNormalInfo = texture(gNormal, TexCoords);
+    vec3 Normal = gNormalInfo.rgb;
+    
+    vec4 gAlbedoSpecInfo = texture(gAlbedoSpec, TexCoords);
+    vec3 Albedo = gAlbedoSpecInfo.rgb;
+    float Specular = gAlbedoSpecInfo.a;
     
     vec3 lighting;
     if(length(Normal)<EPS){
@@ -94,11 +101,11 @@ void main(){
     }else{
         seed = length(FragPos);
         lighting = Albedo * 0.1; // hard-coded ambient component
-        vec3 viewDir = normalize(viewPos - FragPos);
+        vec3 viewDir = normalize(-FragPos);
         vec3 lightDir = normalize(sunDir);
         vec3 halfWay = normalize(viewDir+lightDir);
-
-        vec3 diffuse = (max(dot(Normal, lightDir), 0.0) * Albedo * lightColor + lightColor * max(pow(dot(Normal,halfWay),40.0),0.0)*Specular) * (1.0-calcShadow(lightSpaceMat * vec4(FragPos,1.0),Normal,lightDir));
+        vec4 lightSpacePos = lightSpaceMat*(inverseViewMat*vec4(FragPos,1.0));
+        vec3 diffuse = (max(dot(Normal, lightDir), 0.0) * Albedo * lightColor + lightColor * max(pow(dot(Normal,halfWay),40.0),0.0)*Specular) * (1.0-calcShadow(lightSpacePos,Normal,lightDir));
         lighting += diffuse;
     }
 
