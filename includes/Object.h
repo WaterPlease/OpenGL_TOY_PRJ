@@ -147,6 +147,27 @@ public:
 
 		// grass patches
 		float grass_vertices[] = {
+			-0.5,0.0,0.0,0.0,1.0,0.0,-0.707107,0.707107,
+			0.5,0.0,0.0,1.0,1.0,0.0,-0.707107,0.707107,
+			-0.5,0.707107,0.707107,0.0,0.0,0.0,-0.707107,0.707107,
+			0.5,0.0,0.0,1.0,1.0,0.0,-0.707107,0.707107,
+			0.5,0.707107,0.707107,1.0,0.0,0.0,-0.707107,0.707107,
+			-0.5,0.707107,0.707107,0.0,0.0,0.0,-0.707107,0.707107,
+			0.25,0.0,-0.433013,0.0,1.0,-0.612373,-0.707107,-0.353553,
+			-0.25,0.0,0.433013,1.0,1.0,-0.612373,-0.707107,-0.353553,
+			-0.362373,0.707107,-0.786566,0.0,0.0,-0.612373,-0.707107,-0.353553,
+			-0.25,0.0,0.433013,1.0,1.0,-0.612373,-0.707107,-0.353553,
+			-0.862372,0.707107,0.07946,1.0,0.0,-0.612373,-0.707107,-0.353553,
+			-0.362373,0.707107,-0.786566,0.0,0.0,-0.612373,-0.707107,-0.353553,
+			0.25,0.0,0.433012,0.0,1.0,0.612372,-0.707107,-0.353554,
+			-0.25,0.0,-0.433012,1.0,1.0,0.612372,-0.707107,-0.353554,
+			0.862372,0.707107,0.079459,0.0,0.0,0.612372,-0.707107,-0.353554,
+			-0.25,0.0,-0.433012,1.0,1.0,0.612372,-0.707107,-0.353554,
+			0.362372,0.707107,-0.786566,1.0,0.0,0.612372,-0.707107,-0.353554,
+			0.862372,0.707107,0.079459,0.0,0.0,0.612372,-0.707107,-0.353554,
+		};
+			
+			/*{
 			-0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,0.0f,1.0f,
 			0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,0.0f,1.0f,
 			-0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,0.0f,1.0f,
@@ -162,7 +183,7 @@ public:
 			0.0f, 0.0f, 0.5f, 1.0f, 1.0f, 1.0f,0.0f,0.0f,
 			0.0f, 1.0f, 0.5f, 1.0f, 0.0f, 1.0f,0.0f,0.0f,
 			0.0f, 1.0f, -0.5f, 0.0f, 0.0f, 1.0f,0.0f,0.0f,
-			};
+			};*/
 		std::cout << "Total # patch of grass : " << grass_numAxisPatch * grass_numAxisPatch << "\n";
 
 		glGenVertexArrays(1, &grass_VAO);
@@ -311,10 +332,11 @@ public:
 		glUniform1i(glGetUniformLocation(grass_shader->ID, "texture_grass"), 2);
 		glBindTexture(GL_TEXTURE_2D, textureGrass);
 
+
 		glDisable(GL_CULL_FACE);
 
 		glBindVertexArray(grass_VAO);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 12, GRASS_INST_LEVEL * GRASS_INST_LEVEL);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 18, GRASS_INST_LEVEL * GRASS_INST_LEVEL);
 		glBindVertexArray(0);
 
 		glEnable(GL_CULL_FACE);
@@ -333,6 +355,8 @@ public:
 			water_shader->setInt("shadowFactor", shadowFactor);
 			water_shader->setFloat("shadowBlurJitter", shadowBlurJitter);
 			water_shader->setFloat("shadowBlurArea", shadowBlurArea);
+			water_shader->setFloat("res_x", screen_x);
+			water_shader->setFloat("res_y", screen_y);
 		}
 		water_shader->setMat4("projection", projection);
 		water_shader->setMat4("view", view);
@@ -342,6 +366,7 @@ public:
 		water_shader->setFloat("waterTimeFactor", waterLambda);
 		water_shader->setMat4("lightSpaceMat", lightSpaceMat);
 		water_shader->setFloat("time", timeMng.getEffectiveTime());
+		water_shader->setMat4("invViewMat", mainCam->getInvViewMat());
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_normal"), 0);
 		glBindTexture(GL_TEXTURE_3D, textureWaterNormal);
@@ -353,6 +378,10 @@ public:
 		glActiveTexture(GL_TEXTURE2);
 		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_shadow"), 2);
 		glBindTexture(GL_TEXTURE_2D, sun->depthMap);
+
+		glActiveTexture(GL_TEXTURE3);
+		glUniform1i(glGetUniformLocation(water_shader->ID, "texture_position"), 3);
+		glBindTexture(GL_TEXTURE_2D, gBuffer_position);
 
 		glBindVertexArray(water_VAO);
 		glPatchParameteri(GL_PATCH_VERTICES, 4);

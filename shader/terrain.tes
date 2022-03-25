@@ -1,5 +1,7 @@
 #version 430 core
 
+#define EPS (1.0/2000)
+
 layout (quads, equal_spacing, ccw) in;
 
 uniform sampler2D texture_height;
@@ -20,8 +22,6 @@ out FGINFO
     vec3 pos;
     vec4 lightSpacePos;
 }fginfo;
-
-float EPS = 0.001;
 
 vec2 getUV(vec3 pos,float minVal,float maxVal){
     float LandAxisLen = maxVal-minVal;

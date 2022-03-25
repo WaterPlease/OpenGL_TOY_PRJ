@@ -131,7 +131,7 @@ void main()
 {   
     seed = dot(fginfo.pos,fginfo.pos);
 
-    float blend = 0.1;
+    float blend = 0.01;
     float rockStart = grassCrit;
         
     vec3 upVec = vec3(0.0,1.0,0.0);
@@ -157,7 +157,7 @@ void main()
    
     
     gPosition.xyz = (view*vec4(fginfo.pos,1.0)).xyz;
-    gPosition.w = 0.0;
+    gPosition.w = -1.0;
 
     gNormal.xyz = normalize((view*vec4(normalize(normal),0.0)).xyz);
     gNormal.w;

@@ -15,6 +15,9 @@
 #define SQRT2 1.414213
 
 class Camera {
+	glm::mat4 prjMat;
+	glm::mat4 viewMat;
+	glm::mat4 invViewMat;
 public:
 	float fovy;
 	float cosHalfDiag;
@@ -30,12 +33,19 @@ public:
 	float rad;
 	float theta;
 	float phi;
-
-	inline glm::mat4 getPerspectiveMat() {
-		return glm::perspective(fovy, aspect, zNear, zFar);
+	inline void updateMat() {
+		prjMat = glm::perspective(fovy, aspect, zNear, zFar);
+		viewMat = glm::lookAt(pos, target, up);
+		invViewMat = glm::inverse(viewMat);
 	}
-	inline glm::mat4 getViewMat() {
-		return glm::lookAt(pos, target, up);
+	inline const glm::mat4& getPerspectiveMat() {
+		return prjMat;
+	}
+	inline const glm::mat4& getViewMat() {
+		return viewMat;
+	}
+	inline const glm::mat4& getInvViewMat() {
+		return invViewMat;
 	}
 	inline void updatePos() {
 		pos = target - rad * front;

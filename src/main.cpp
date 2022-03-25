@@ -7,7 +7,7 @@
 
 int main()
 {
-    auto app = Engine("OpenGL Project",1920,1080);
+    auto app = Engine("OpenGL Project", screen_x, screen_y);
 
     app.loop();
 

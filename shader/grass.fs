@@ -106,12 +106,12 @@ void main()
     if(color.a < 0.1     ||
        texCoords.y < 0.3 || 
        texCoords.x<0.1   ||
-       texCoords.x>0.95)//  ||
-       //abs(dot(viewDir,fNormal))<0.1)
+       texCoords.x>0.95  ||
+       abs(dot(viewDir,fNormal))<0.1)
         discard;
 
     gPosition.xyz = (view*vec4(worldPos,1.0)).xyz;
-    gPosition.w = 0.0;
+    gPosition.w = -1.0;
     gNormal.xyz = normalize((view*vec4(0.0,1.0,0.0,0.0)).xyz);
     gAlbedoSpec.rgb = color.rgb;
     gAlbedoSpec.a   = 0.0;

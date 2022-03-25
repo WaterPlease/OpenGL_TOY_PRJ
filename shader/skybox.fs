@@ -10,7 +10,7 @@ in vec3 fragPos;
 uniform samplerCube skybox;
 
 void main(){
-    gPosition = vec4(fragPos,0.0);
+    gPosition = vec4(fragPos,-1.0);
     gNormal = vec4(0.0);
     gAlbedoSpec.rgb = texture(skybox,TexCoords).rgb;
     gAlbedoSpec.a   = 1.0;

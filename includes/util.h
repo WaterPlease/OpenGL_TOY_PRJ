@@ -40,4 +40,9 @@ public:
 	inline void   setSpeed(double _speed) { speed = _speed; }
 };
 extern TimeMng timeMng;
+
+
+extern GLuint gBuffer_position;
+extern GLuint gBuffer_AlbedoSpec;
+extern GLuint gBuffer_Normal;
 #endif

@@ -9,14 +9,18 @@ out vec4 FragColor;
 uniform sampler2D image_position;
 uniform sampler2D image_normal;
 uniform sampler2D image_color;
+uniform samplerCube texture_skybox;
 
 uniform vec3 camPos;
 uniform vec3 camFront;
 uniform mat4 Prjmat;
+uniform mat4 invViewMat;
+uniform vec3 lightColor;
 
 uniform float maxDistance;
 uniform float resolution;
-uniform int   steps;
+uniform int   bin_steps;
+uniform int   lin_steps;
 uniform float thickness;
 
 float rayStep = 0.2f;
@@ -30,88 +34,127 @@ bool isAdaptiveStepEnabled = true;
 bool isBinarySearchEnabled = true;
 bool debugDraw = false;
 
-float LOD1 = 30.0f;
+float LOD1 = 90.0f;
 
-float random (vec2 uv) {
-	return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453123); //simple random function
-}
+vec4 Raycast(vec3 rayOrigin, vec3 rayDir,sampler2D tex_position){
+	// return : (uv coordinates, ray distance, delta depth)
+	// 			when ray hit somewhere, ray distance > 0
+	//				if not, ray distance < 0
 
-vec2 generateProjectedPosition(vec3 pos){
-	vec4 samplePosition = Prjmat * vec4(pos, 1.f);
-	samplePosition.xy = (samplePosition.xy / samplePosition.w) * 0.5 + 0.5;
-	return samplePosition.xy;
-}
+	// parameter init.
+	vec2 texSz = textureSize(tex_position,0);
 
-vec3 SSR(vec3 position, vec3 reflection) {
-	vec3 step = rayStep * reflection;
-	vec3 marchingPosition = position + step;
-	float delta;
-	float depthFromScreen;
-	vec2 screenPosition;
+	// start of ray cast
+	vec3 rayEnd = rayOrigin + rayDir * maxDistance;
+
+	vec4 screenStart, screenEnd; // ray points in NDC:[0,1]x[0,1]
 	
-	int i = 0;
-	for (; i < iterationCount; i++) {
-		screenPosition = generateProjectedPosition(marchingPosition);
-		depthFromScreen = abs(texture(image_position,screenPosition).z);
-		delta = abs(marchingPosition.z) - depthFromScreen;
-		if (abs(delta) < distanceBias) {
-            float m = clamp(distance(marchingPosition,position)/maxDistance,0.0,1.0);
-            float clip = clamp(length(screenPosition-0.5)*1.5 ,0.0,1.0);
+	screenStart = Prjmat * vec4(rayOrigin,1.0);
+	screenStart.xyz /= screenStart.w;
+	screenStart.xy = screenStart.xy * 0.5 + 0.5;
+	screenStart.xy *= texSz;
 
-            float w = smoothstep(0.0,1.0,clamp((m+clip)*0.5,0.0,1.0));
-			return mix(texture(image_color, screenPosition).rgb,texture(image_color, TexCoords).rgb,w);
-		}
-		if (isBinarySearchEnabled && delta > 0) {
+	screenEnd = Prjmat * vec4(rayEnd,1.0);
+	screenEnd.xyz /= screenEnd.w;
+	screenEnd.xy = screenEnd.xy * 0.5 + 0.5;
+	screenEnd.xy *= texSz;
+
+	vec2 delta = (screenEnd-screenStart).xy; // delta on screen
+
+	if(length(delta) < 2){ // discard when ray is too short on screen
+		return vec4(1.0,1.0,-1.0,-1.0);
+	}
+	float xMajor = (abs(delta.x)>abs(delta.y))? 1:0;
+
+	vec2 inc = ((delta/mix(abs(delta.y),abs(delta.x),xMajor))) * (1/clamp(resolution,0.0,1.0));
+	int numLinearIter = min(
+							int(mix(abs(delta.y),abs(delta.x),xMajor)),
+							lin_steps);
+	// ray increasement in screen space that move 1/resoultion pixel.
+	
+	vec2 searchPos = screenStart.xy;
+	vec2 searchPosUV;
+
+	vec4 viewPos;
+
+	float dDepth;
+
+	float search1 = 0;
+	float search0 = 0;
+
+	float viewDistance = 0.0;
+
+	int hit1 = -1;
+	int hit0 = 0;
+	// linear step pass
+	int i;
+	for(i=0;i<numLinearIter;i++){
+		searchPos += inc;
+		searchPosUV = searchPos/texSz;
+		
+		search1 = mix(
+						(searchPos.y-screenStart.y)/delta.y,
+						(searchPos.x-screenStart.x)/delta.x,
+						xMajor
+					 );
+
+		viewPos = texture(tex_position,searchPosUV);
+		viewDistance = abs((rayOrigin.z*rayEnd.z)/mix(rayEnd.z,rayOrigin.z,search1));
+
+		dDepth = viewDistance-abs(viewPos.z);
+
+		if(dDepth > 0 && dDepth < thickness){
+			hit0 = 1;
 			break;
-		}
-		if (isAdaptiveStepEnabled){
-			float directionSign = sign(abs(marchingPosition.z) - depthFromScreen);
-			//this is sort of adapting step, should prevent lining reflection by doing sort of iterative converging
-			//some implementation doing it by binary search, but I found this idea more cheaty and way easier to implement
-			step = step * (1.0 - rayStep * max(directionSign, 0.0));
-			marchingPosition += step * (-directionSign);
-		}
-		else {
-			marchingPosition += step;
-		}
-		if (isExponentialStepEnabled){
-			step *= 1.05;
-		}
-    }
-	if(isBinarySearchEnabled){
-		for(; i < iterationCount; i++){
-			
-			step *= 0.5;
-			marchingPosition = marchingPosition - step * sign(delta);
-			
-			screenPosition = generateProjectedPosition(marchingPosition);
-			depthFromScreen = abs(texture(image_position,screenPosition).z);
-			delta = abs(marchingPosition.z) - depthFromScreen;
-			
-			if (abs(delta) < distanceBias) {
-                float m = clamp(distance(marchingPosition,position)/maxDistance,0.0,1.0);
-                float clip = clamp(length(screenPosition*vec2(1.3,1.0)-0.5)*1.5 ,0.0,1.0);
-                float w = smoothstep(0.0,1.0,clamp(((m+clip)-0.5)*2.0,0.0,1.0));
-                return mix(texture(image_color, screenPosition).rgb,texture(image_color, TexCoords).rgb,w);
-			}
+		}else{
+			search0 = search1;
 		}
 	}
-	
-    return vec3(0.0);
+	float iter_dist = float(i)/float(numLinearIter);
+	search1 = search0 + (search1-search0)/2.0;
+
+	int eff_steps = bin_steps*hit0;
+
+	float dist = -1.0;
+	for(int i=0;i<eff_steps;++i){
+		searchPos = mix(screenStart.xy,screenEnd.xy,search1);
+		searchPosUV = searchPos/texSz;
+
+		viewPos = texture(tex_position,searchPosUV);
+		viewDistance = abs((rayOrigin.z*rayEnd.z)/mix(rayEnd.z,rayOrigin.z,search1));
+
+		if(dDepth > 0 && dDepth < thickness){
+			hit1 = 1;
+			dist = search1;
+			search1 = search0 + ((search1 - search0) / 2);
+		} else {
+			float temp = search1;
+			search1 = search1 + ((search1 - search0) / 2);
+			search0 = temp;
+		}
+	}
+
+	hit1 = (searchPosUV.x < 0.0 || searchPosUV.x > 1.0||
+			searchPosUV.y < 0.0 || searchPosUV.y > 1.0)?
+			-1:hit1;
+	return vec4(searchPosUV,
+				(hit1<0)? -1.0:min(search1,iter_dist),
+				dDepth/thickness);
 }
 
+
 void main(){
-	vec3 position = texture(image_position,TexCoords).xyz;
+	vec4 posMask = texture(image_position,TexCoords);
 	vec4 normal = vec4(texture(image_normal, TexCoords).xyz, 0.0);
-	float metallic = texture(image_position,TexCoords).a;
-	if (!enableSSR || metallic < 0.01 || length(position)>LOD1 ||dot(camFront,normalize(position))<0.4) {
-		FragColor = texture(image_color, TexCoords);
-	}else {
-		vec3 reflectionDirection = normalize(reflect(position, normalize(normal.xyz)));
-        if(dot(reflectionDirection,position)>0)
-            FragColor = vec4(SSR(position, normalize(reflectionDirection)), 1.0f);
-        if (FragColor.xyz == vec3(0.0f)){
-            FragColor = texture(image_color, TexCoords);
-        }
+
+	FragColor = texture(image_color, TexCoords);
+
+	if(posMask.w>=0){
+		vec3 reflectionDirection = normalize(reflect(normalize(posMask.xyz), normalize(normal.xyz)));
+		vec4 skyColor = texture(texture_skybox,(invViewMat * vec4(reflectionDirection,0.0)).xyz);
+        if(dot(reflectionDirection,posMask.xyz)>0 && length(posMask.xyz) < LOD1){
+            vec4 res = Raycast(posMask.xyz,reflectionDirection,image_position);
+			FragColor = (res.z < 0)? FragColor:mix(texture(image_color,res.xy),FragColor,clamp(res.z*res.w+(1-posMask.w),0.0,1.0));
+		}
 	}
 }

@@ -226,6 +226,10 @@ public:
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 		lightingShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\postProcess.vs",
 			"C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\deffered.fs");
+
+		gBuffer_position = gPosition;
+		gBuffer_Normal = gNormal;
+		gBuffer_AlbedoSpec = gAlbedoSpec;
 	}
 
 	void begin() {
@@ -273,6 +277,7 @@ class SSRPIPE :public RenderPIPE {
 	GLuint quadVAO;
 	GLuint quadVBO;
 	glm::uvec2 gBufferImages;
+	GLuint texture_skybox;
 	Shader* ssrShader;
 	float RES_X, RES_Y;
 public:
@@ -328,8 +333,11 @@ public:
 		RES_Y = screenRes.y;
 	}
 
-	void gBufferBind(GLuint gPos, GLuint gNormal) {
+	inline void gBufferBind(GLuint gPos, GLuint gNormal) {
 		gBufferImages = glm::uvec2(gPos,gNormal);
+	}
+	inline void skyboxBind(GLuint skybox) {
+		texture_skybox = skybox;
 	}
 
 	void begin() {
@@ -347,12 +355,15 @@ public:
 			ssrShader->setFloat("RES_Y", RES_Y);
 			ssrShader->setFloat("maxDistance", ssr_maxDistance);
 			ssrShader->setFloat("resolution", ssr_resolution);
-			ssrShader->setFloat("thickness", ssr_thickness);
-			ssrShader->setInt("steps", ssr_steps);
+			ssrShader->setFloat("thickness", ssr_thickness); 
+			ssrShader->setInt("bin_steps", ssr_bin_steps);
+			ssrShader->setInt("lin_steps", ssr_lin_steps);
+			ssrShader->setVec3("lightColor", sun->color);
 		}
 		ssrShader->setVec3("camPos", mainCam->pos);
 		ssrShader->setVec3("camFront", glm::vec3(mainCam->getViewMat()*glm::vec4(mainCam->front,0.0)));
 		ssrShader->setMat4("Prjmat", mainCam->getPerspectiveMat());
+		ssrShader->setMat4("invViewMat", mainCam->getInvViewMat());
 
 		glActiveTexture(GL_TEXTURE0);
 		glUniform1i(glGetUniformLocation(ssrShader->ID, "image_position"), 0);
@@ -363,6 +374,9 @@ public:
 		glActiveTexture(GL_TEXTURE2);
 		glUniform1i(glGetUniformLocation(ssrShader->ID, "image_color"), 2);
 		glBindTexture(GL_TEXTURE_2D, texture_color);
+		glActiveTexture(GL_TEXTURE3);
+		glUniform1i(glGetUniformLocation(ssrShader->ID, "texture_skybox"), 3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texture_skybox);
 
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);

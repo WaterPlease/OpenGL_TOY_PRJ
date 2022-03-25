@@ -22,10 +22,12 @@ in VS_OUT{
     vec4 lightSpacePos;
 } fs_in;
 uniform mat4 view;
+uniform mat4 invViewMat;
 
 uniform sampler3D texture_normal;
 uniform samplerCube texture_skybox;
 uniform sampler2D texture_shadow;
+uniform sampler2D texture_position;
 
 uniform float time;
 uniform vec3 lightDir;
@@ -33,6 +35,9 @@ uniform vec3 camPos;
 uniform float uvFactorWater;
 uniform float waterTimeFactor;
 uniform int shadowFactor;
+uniform float res_x;
+uniform float res_y;
+uniform float waterLevel;
 
 uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
@@ -115,12 +120,16 @@ void main()
     vec3 normal = texture(texture_normal, vec3(uvFactorWater * fs_in.TexCoords,time*waterTimeFactor)).rgb;
     normal = 2.0*normal-vec3(1.0);
     normal = normal * 0.3 + 0.7 * vec3(0.0,0.0,1.0);
-    normal = normalize(fs_in.TBN * normal);
     //normal = vec3(0.0,1.0,0.0);
+    normal = normalize(fs_in.TBN * normal);
 
+    vec4 ground = invViewMat * vec4(texture(texture_position,gl_FragCoord.xy/vec2(res_x,res_y)).xyz,1.0);
+    float depth = abs(distance(ground.xyz,camPos)-distance(fs_in.FragPos,camPos));
+    float foamWeight = clamp(1-(depth-0.02)*8,0.0,1.0);
+    
     gPosition.xyz = (view*vec4(fs_in.FragPos,1.0)).xyz;
-    gPosition.w = 1.0;
+    gPosition.w = 1-foamWeight;
     gNormal.xyz = normalize((view*vec4(normal,0.0)).xyz);
-    gAlbedoSpec.rgb = waterColor;
-    gAlbedoSpec.a   = 1.0;
+    gAlbedoSpec.rgb = mix(waterColor,vec3(1.0),foamWeight);
+    gAlbedoSpec.a   = 1-foamWeight;
 }

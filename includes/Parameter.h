@@ -3,11 +3,26 @@
 
 #include "glm_pre.h"
 
+extern bool parameter_changed;
+
+extern bool renderUI;
+
+extern int screen_x;
+extern int screen_y;
+
 extern int GROUND_TESS_LEVEL;
 extern int GRASS_INST_LEVEL;
 extern int WATER_TESS_LEVEL;
 extern float gamma;
-extern bool parameter_changed;
+extern int shadowFactor;
+extern float shadowBlurJitter;
+extern float shadowBlurArea;
+extern float ssr_maxDistance;
+extern float ssr_resolution;
+extern int   ssr_lin_steps;
+extern int   ssr_bin_steps;
+extern float ssr_thickness;
+
 
 extern float landSize;
 extern float waterSize;
@@ -30,14 +45,6 @@ extern float speed;
 extern float rotSpeed;
 extern float tSpeed;
 
-extern int shadowFactor;
-extern float shadowBlurJitter;
-extern float shadowBlurArea;
 
 extern unsigned int texture_skybox;
-
-extern float ssr_maxDistance;
-extern float ssr_resolution;
-extern int   ssr_steps;
-extern float ssr_thickness;
 #endif

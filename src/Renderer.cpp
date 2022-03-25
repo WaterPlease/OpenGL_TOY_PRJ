@@ -138,4 +138,5 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
 
     // PIPELINE binding
     ssrPIPE->gBufferBind(defferedPIPE->gPosition, defferedPIPE->gNormal);
+    ssrPIPE->skyboxBind(skyboxTexture);
 }

@@ -1,6 +1,6 @@
 #version 430 core
 
-#define EPS 0.001
+#define EPS (1.0/2000)
 #define M_PI 3.1415926535897932384626433832795
 
 layout (location = 0) in vec3 aPos;
@@ -43,16 +43,17 @@ vec2 getUV(vec3 pos,float minVal,float maxVal){
     return vec2(u,v);
 }
 float getHeight(vec2 uv){
-    //return max_height * texture(texture_height,uv).x;
-    return max_height * (texture(texture_height,uv).x
-                        +texture(texture_height,uv-vec2(-EPS,EPS)).x
+    return max_height * (texture(texture_height,uv).x * 0.25
+                        
+                        +(texture(texture_height,uv-vec2(-EPS,EPS)).x
                         +texture(texture_height,uv+vec2(-EPS,EPS)).x
                         +texture(texture_height,uv-vec2(EPS,EPS)).x
-                        +texture(texture_height,uv+vec2(EPS,EPS)).x
-                        +texture(texture_height,uv-vec2(EPS,0.0)).x
+                        +texture(texture_height,uv+vec2(EPS,EPS)).x) * 0.0625
+
+                        +(texture(texture_height,uv-vec2(EPS,0.0)).x
                         +texture(texture_height,uv+vec2(EPS,0.0)).x
                         +texture(texture_height,uv-vec2(0.0,EPS)).x
-                        +texture(texture_height,uv+vec2(0.0,EPS)).x)/9.0;
+                        +texture(texture_height,uv+vec2(0.0,EPS)).x) * 0.125 );
 }
 
 vec3 trochoidal(vec3 v, vec2 dir, float steep, float wavelength,float weight){
@@ -84,7 +85,7 @@ vec3 multi_trochoidal(vec3 v,float weight){
 #define LOD2 90.0
 #define LOD1 120.0
 void main(void)
-{
+{   
     bool underWater = false;
     vec3 vPos = aPos*grassSize;
     float rad = rand(vec2(gl_InstanceID));
@@ -103,7 +104,7 @@ void main(void)
     vec2 uv = getUV(pos.xyz,minVal,maxVal);
 
     pos.y = getHeight(uv);
-    if(pos.y < waterLevel){
+    if(pos.y < (waterLevel+0.3)){
         underWater = true;
     }
 
@@ -147,9 +148,7 @@ void main(void)
         rot[3] = vec4(0.0,0.0,0.0,1.0);
 
         vec4 globalPos = vec4(pos + (rot * vec4(vPos,1.0)).xyz ,1.0);
-        if(vPos.y > 0.5){
-            globalPos.xyz = multi_trochoidal(globalPos.xyz,1.0);
-        }
+        globalPos.xyz = (vPos.y > EPS)? multi_trochoidal(globalPos.xyz,1.0) : globalPos.xyz;
 
         texCoords = aTex;
         lightSpacePos = lightSpaceMat * globalPos;
