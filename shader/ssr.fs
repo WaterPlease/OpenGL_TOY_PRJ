@@ -34,7 +34,7 @@ bool isAdaptiveStepEnabled = true;
 bool isBinarySearchEnabled = true;
 bool debugDraw = false;
 
-float LOD1 = 90.0f;
+float LOD1 = 45.0f;
 
 vec4 Raycast(vec3 rayOrigin, vec3 rayDir,sampler2D tex_position){
 	// return : (uv coordinates, ray distance, delta depth)
@@ -147,14 +147,15 @@ void main(){
 	vec4 posMask = texture(image_position,TexCoords);
 	vec4 normal = vec4(texture(image_normal, TexCoords).xyz, 0.0);
 
-	FragColor = texture(image_color, TexCoords);
+	vec3 color = texture(image_color, TexCoords).rgb;
 
-	if(posMask.w>=0){
+	if(posMask.w>EPS){
 		vec3 reflectionDirection = normalize(reflect(normalize(posMask.xyz), normalize(normal.xyz)));
-		vec4 skyColor = texture(texture_skybox,(invViewMat * vec4(reflectionDirection,0.0)).xyz);
         if(dot(reflectionDirection,posMask.xyz)>0 && length(posMask.xyz) < LOD1){
             vec4 res = Raycast(posMask.xyz,reflectionDirection,image_position);
-			FragColor = (res.z < 0)? FragColor:mix(texture(image_color,res.xy),FragColor,clamp(res.z*res.w+(1-posMask.w),0.0,1.0));
+			color += (res.z < 0)? vec3(0.0):texture(image_color,res.xy).rgb;
+			//FragColor = (res.z < 0)? FragColor:mix(texture(image_color,res.xy)*FragColor/dot(vec3(0.3,0.59,0.11),FragColor),FragColor,clamp(res.z*res.w,0.0,1.0)*(1-posMask.w));
 		}
 	}
+	FragColor = vec4(color,1.0);
 }

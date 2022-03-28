@@ -13,11 +13,27 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
     objs.push_back(new SimpleObject());
     SimpleObject& obj = *(SimpleObject*)(objs.back());
 
-    obj.setModel(new Model("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\model\\Intergalactic_Spaceship-(Wavefront).obj"));
+    
 
     obj.setShader(new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.vs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.fs",nullptr,nullptr));
     */
+    objs.push_back(new FireFliesObject());
+    objs.push_back(new SimpleObject("lightHouse"));
+    SimpleObject& obj = *(SimpleObject*)(objs.back());
+    obj.setModel(new Model("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model\\lighthouse\\uploads_files_2841766_Lighthouse.obj"));
+    std::cout << "Texture loaded\n";
+    for (Texture texture : obj.getModel()->textures_loaded) {
+        std::cout << "Texture : " << texture.type << "\n";
+        std::cout << "      at \"" << texture.path << "\"\n";
+    }
+    obj.setShader(new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.vs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.fs"));
+    obj.setShadowShader(new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default_shadow.vs",
+        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.fs"));
+    obj.pos = glm::vec3(5.2f, -2.6f, 10.5f);
+    obj.scale = 0.5f;
+    obj.make_shadow = true;
 
     ComputeShader::printWorkgrouInfo();
 
@@ -41,7 +57,7 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.fs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tcs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tes", nullptr);
-    objs.push_back(new TerrainObject(0.5f*2.0f,landSize,ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
+    objs.push_back(new TerrainObject(0.065231*8.0f,landSize,ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
     //objs.push_back(new TerrainObject(0, 0, 10.0f));
 }
 
@@ -61,7 +77,9 @@ void Engine::loop() {
         for (auto iter = objs.begin(); iter != objs.end(); iter++) {
             BaseObject* ptr_obj = *iter;
             if (ptr_obj->getClassID() == ObjClass::Simple) {
-                continue;
+                SimpleObject& simpleObj = *(SimpleObject*)ptr_obj;
+                if (simpleObj.make_shadow)
+                    simpleObj.shadowDraw();
             }
             else if (ptr_obj->getClassID() == ObjClass::Terrain) {
                 TerrainObject& terrain = *(TerrainObject*)ptr_obj;
@@ -113,6 +131,7 @@ void Engine::loop() {
                     ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f) ||
                     ImGui::SliderFloat("water waveLength", &water_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
                     ImGui::SliderFloat("water steepness", &water_steepness, 0.1f, 1.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("water transparency", &water_transparency, 0.1f, 10.0f, "%.3f", 1.0f) ||
                     ImGui::SliderFloat("water time speed", &waterLambda, 0.0f, 1.0f) ||
                     ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
                     ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f) ||
@@ -132,6 +151,10 @@ void Engine::loop() {
                 if (ImGui::SliderFloat("time speed", &tSpeed, -3.0f, 3.0f, "%.3f", 1.0f)) {
                     timeMng.setSpeed((double)tSpeed);
                 }
+                if (ImGui::ColorEdit3("Sun color", &(sun->color[0])) ||
+                    ImGui::InputFloat("Sun strength",&sun->lightStrength)) {
+                    parameter_changed = true;
+                }
                 ImGui::End();
             }
             {
@@ -142,13 +165,31 @@ void Engine::loop() {
             {
                 ImGui::Begin("Render path");
                 ImGui::Text("Before lighting pass");
-                ImGui::Image((ImTextureID)(renderer.defferedPIPE->gAlbedoSpec), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+                ImGui::Image((ImTextureID)(renderer.defferedPIPE->gAlbedoAO), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
                 ImGui::Text("Before SSR PIPE");
                 //ImGui::Image((ImTextureID)(renderer.ssrPIPE->texture_color), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
                 ImGui::Text("HDR Bloom filter - blurred");
                 ImGui::Image((ImTextureID)(renderer.hdrPIPE->blurredTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
                 ImGui::Text("Before tone mapping");
                 ImGui::Image((ImTextureID)(renderer.hdrPIPE->colorTexture), ImVec2(480, 270), ImVec2(0, 1), ImVec2(1, 0));
+                ImGui::End();
+            }
+            {
+                ImGui::Begin("Obj transform");
+                for (auto iter = objs.begin(); iter != objs.end(); iter++) {
+                    BaseObject* ptr_obj = *iter;
+                    if (ptr_obj->getClassID() == ObjClass::Simple) {
+                        SimpleObject& obj = *(SimpleObject*)ptr_obj;
+                        ImGui::Text(obj.name.c_str());
+                        if (ImGui::SliderFloat3("Pos", &obj.pos[0], -landSize / 2.0f, landSize / 2.0f, "%.3f", 1.0f) ||
+                            ImGui::InputFloat("scale", &obj.scale)) {
+                            parameter_changed = true;
+                        }
+                    }
+                }
+                ImGui::Text("Firefly");
+                if (ImGui::Checkbox("Draw fireflies ?", &drawFireflies))
+                    parameter_changed = true;
                 ImGui::End();
             }
         }
@@ -161,21 +202,7 @@ void Engine::loop() {
             BaseObject* ptr_obj = *iter;
             if (ptr_obj->getClassID() == ObjClass::Simple) {
                 SimpleObject& obj = *(SimpleObject*)ptr_obj;
-                obj.getShader()->use();
-
-                // view/projection transformations
-                glm::mat4 projection = mainCam->getPerspectiveMat();
-                glm::mat4 view = mainCam->getViewMat();
-                obj.getShader()->setMat4("projection", projection);
-                obj.getShader()->setMat4("view", view);
-
-                // render the loaded model
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-                model = glm::rotate(model, glm::radians((float)((clock() / 10) % 360)), glm::vec3(0.0, 1.0, 0.0));
-                model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-                obj.getShader()->setMat4("model", model);
-                renderer.draw(*ptr_obj);
+                obj.draw();
             }
             else if (ptr_obj->getClassID() == ObjClass::Terrain) {
                 TerrainObject& terrain = *(TerrainObject*)ptr_obj;
@@ -184,6 +211,10 @@ void Engine::loop() {
                 //sunLightDir = glm::normalize(res);
                 //sunLightDir = glm::normalize(sunLightDir+glm::vec3(0.0f,0.5f,0.0f));
                 terrain.draw();
+            }else if (ptr_obj->getClassID() == ObjClass::FireFlies) {
+                FireFliesObject& obj = *(FireFliesObject*)ptr_obj;
+                if(drawFireflies)
+                    obj.draw();
             }
         }
         if (wireMode) {

@@ -162,31 +162,31 @@ class DEFFEREDPIPE :public RenderPIPE {
 	GLuint quadVBO;
 	Shader* lightingShader;
 public:
-	GLuint gPosition,gNormal,gAlbedoSpec;//alpha value of albedo buffer is specular value.
+	GLuint gPositionMetal,gNormalRough,gAlbedoAO;//alpha value of albedo buffer is specular value.
 	DEFFEREDPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFBO = 0) :RenderPIPE(), nextFBO(nextPIPEFBO) {
 
 		begin();
 
-		glGenTextures(1, &gPosition);
-		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glGenTextures(1, &gPositionMetal);
+		glBindTexture(GL_TEXTURE_2D, gPositionMetal);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPositionMetal, 0);
 
-		glGenTextures(1, &gNormal);
-		glBindTexture(GL_TEXTURE_2D, gNormal);
+		glGenTextures(1, &gNormalRough);
+		glBindTexture(GL_TEXTURE_2D, gNormalRough);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormalRough, 0);
 
-		glGenTextures(1, &gAlbedoSpec);
-		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+		glGenTextures(1, &gAlbedoAO);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoAO);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenRes.x, screenRes.y, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoAO, 0);
 
 		unsigned int attachments[] = {GL_COLOR_ATTACHMENT0 ,GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 		glDrawBuffers(3, attachments);
@@ -227,9 +227,9 @@ public:
 		lightingShader = new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\postProcess.vs",
 			"C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\deffered.fs");
 
-		gBuffer_position = gPosition;
-		gBuffer_Normal = gNormal;
-		gBuffer_AlbedoSpec = gAlbedoSpec;
+		gBuffer_position = gPositionMetal;
+		gBuffer_Normal = gNormalRough;
+		gBuffer_Albedo = gAlbedoAO;
 	}
 
 	void begin() {
@@ -245,25 +245,36 @@ public:
 		if (parameter_changed) {
 			lightingShader->setFloat("shadowBlurJitter", shadowBlurJitter);
 			lightingShader->setFloat("shadowBlurArea", shadowBlurArea);
+			lightingShader->setVec3("lightColor", sun->color);
+			lightingShader->setFloat("sunStrength", sun->lightStrength); 
+			lightingShader->setFloat("landSize", landSize);
 		}
 		lightingShader->setVec3("sunDir", glm::vec3(mainCam->getViewMat()*glm::vec4(sun->lightDir,0.0)));
-		lightingShader->setVec3("lightColor", sun->color);
 		lightingShader->setVec3("viewPos", mainCam->pos);
+		lightingShader->setMat4("view", mainCam->getViewMat());
 		lightingShader->setMat4("inverseViewMat", glm::inverse(mainCam->getViewMat()));
 		lightingShader->setMat4("lightSpaceMat", sun->lightSpaceMat(landSize));;
+		lightingShader->setBool("drawFireflies", drawFireflies);
 
 		glActiveTexture(GL_TEXTURE0);
-		glUniform1i(glGetUniformLocation(lightingShader->ID, "gPosition"), 0);
-		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "gPositionMetal"), 0);
+		glBindTexture(GL_TEXTURE_2D, gPositionMetal);
 		glActiveTexture(GL_TEXTURE1);
-		glUniform1i(glGetUniformLocation(lightingShader->ID, "gNormal"), 1);
-		glBindTexture(GL_TEXTURE_2D, gNormal);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "gNormalRough"), 1);
+		glBindTexture(GL_TEXTURE_2D, gNormalRough);
 		glActiveTexture(GL_TEXTURE2);
-		glUniform1i(glGetUniformLocation(lightingShader->ID, "gAlbedoSpec"), 2);
-		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+		glUniform1i(glGetUniformLocation(lightingShader->ID, "gAlbedoAO"), 2);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoAO);
 		glActiveTexture(GL_TEXTURE3);
 		glUniform1i(glGetUniformLocation(lightingShader->ID, "texture_shadow"), 3);
 		glBindTexture(GL_TEXTURE_2D, sun->depthMap);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_SSBO_FLY);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gl_SSBO_FLY);
+		GLuint block_index0 = 0;
+		block_index0 = glGetProgramResourceIndex(lightingShader->ID, GL_SHADER_STORAGE_BLOCK, "flyInfo");
+		GLuint ssbo_binding_point_index = 3;
+		glShaderStorageBlockBinding(lightingShader->ID, block_index0, ssbo_binding_point_index);
 
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -333,8 +344,8 @@ public:
 		RES_Y = screenRes.y;
 	}
 
-	inline void gBufferBind(GLuint gPos, GLuint gNormal) {
-		gBufferImages = glm::uvec2(gPos,gNormal);
+	inline void gBufferBind(GLuint gPosMetla, GLuint gNormalRough) {
+		gBufferImages = glm::uvec2(gPosMetla,gNormalRough);
 	}
 	inline void skyboxBind(GLuint skybox) {
 		texture_skybox = skybox;

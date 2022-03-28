@@ -91,6 +91,7 @@ class Sun{
 	double time;
 	glm::mat4 transMat;
 public:
+	float lightStrength = 1.50f;
 	glm::vec3 lightDir;
 	glm::vec3 color;
 	GLuint depthMap;
@@ -115,6 +116,7 @@ public:
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		color = glm::vec3(1.0);
 	}
 
 	inline void begin() {
@@ -124,8 +126,8 @@ public:
 		lightPos.z = cos(time) * 2.0f;
 		lightPos.y = 1.5f + cos(time) * 1.0f;
 		lightDir = glm::normalize(lightPos);
-		float highnoon = clamp(lightDir.y, 0.0f, 1 / 10.0f) * 10.0f;
-		color = glm::mix(glm::vec3(1.0f), glm::vec3(0.99f, 0.80, 0.44f), highnoon);
+		//float highnoon = clamp(lightDir.y, 0.0f, 1 / 10.0f) * 10.0f;
+		//color = glm::mix(glm::vec3(1.0f), glm::vec3(0.99f, 0.80, 0.44f), highnoon);
 		//time = 1.750;
 		glViewport(0, 0, shadow_resolution, shadow_resolution);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);

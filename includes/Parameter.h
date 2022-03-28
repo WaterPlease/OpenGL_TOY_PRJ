@@ -35,6 +35,7 @@ extern float max_height;
 
 extern float water_waveLength;
 extern float water_steepness;
+extern float water_transparency;
 extern float grass_waveLength;
 extern float grass_steepness;
 extern float grassProb;
@@ -47,4 +48,5 @@ extern float tSpeed;
 
 
 extern unsigned int texture_skybox;
+extern bool drawFireflies;
 #endif

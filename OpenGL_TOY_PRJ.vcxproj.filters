@@ -235,5 +235,23 @@
     <None Include="shader\ssr.cs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
+    <None Include="shader\ssr.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="Doc\gBuffer.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="shader\default_shadow.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\flyUpdate.cs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\flyShader.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\flyShader.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -43,6 +43,9 @@ extern TimeMng timeMng;
 
 
 extern GLuint gBuffer_position;
-extern GLuint gBuffer_AlbedoSpec;
+extern GLuint gBuffer_Albedo;
 extern GLuint gBuffer_Normal;
+
+extern GLuint gl_SSBO_FLY;
+extern GLuint gl_texture_heightmap;
 #endif

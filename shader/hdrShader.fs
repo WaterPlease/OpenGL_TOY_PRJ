@@ -25,7 +25,8 @@ void main()
 
     hdr += texture(bloomTexture,TexCoords).rgb;
 
-    vec3 mapped = vec3(1.0) - exp(-hdr * exposure);//ACESFilm(hdr);
+    vec3 mapped = ACESFilm(hdr);
+    //vec3 mapped = vec3(1.0) - exp(-hdr * exposure);
 
     mapped = pow(mapped,vec3(1.0/gamma));
     FragColor = vec4(mapped,1.0);

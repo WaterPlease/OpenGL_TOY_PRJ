@@ -137,6 +137,6 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
     //defferedPIPE = new DEFFEREDPIPE(this->screenRes, hdrPIPE->fbo);
 
     // PIPELINE binding
-    ssrPIPE->gBufferBind(defferedPIPE->gPosition, defferedPIPE->gNormal);
+    ssrPIPE->gBufferBind(defferedPIPE->gPositionMetal, defferedPIPE->gNormalRough);
     ssrPIPE->skyboxBind(skyboxTexture);
 }

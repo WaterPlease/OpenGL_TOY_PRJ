@@ -65,12 +65,17 @@
     <ClInclude Include="includes\util.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Doc\gBuffer.md" />
     <None Include="Doc\TODO.md" />
+    <None Include="shader\default_shadow.vs" />
     <None Include="shader\extract.cs" />
     <None Include="shader\blur.cs" />
     <None Include="shader\default.fs" />
     <None Include="shader\default.vs" />
     <None Include="shader\deffered.fs" />
+    <None Include="shader\flyShader.fs" />
+    <None Include="shader\flyShader.vs" />
+    <None Include="shader\flyUpdate.cs" />
     <None Include="shader\grass.fs" />
     <None Include="shader\grass.vs" />
     <None Include="shader\hdrShader.fs" />
@@ -78,6 +83,7 @@
     <None Include="shader\skybox.fs" />
     <None Include="shader\skybox.vs" />
     <None Include="shader\ssr.cs" />
+    <None Include="shader\ssr.fs" />
     <None Include="shader\terrain.fs" />
     <None Include="shader\terrain.tcs" />
     <None Include="shader\terrain.tes" />

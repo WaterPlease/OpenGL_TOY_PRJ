@@ -1,21 +1,29 @@
 #version 430 core
 
+layout(std430, binding = 3) volatile buffer flyInfo {
+	float pos [32*32*5];
+}flyinfo;
+
 out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gPosition;
-uniform sampler2D gNormal;
-uniform sampler2D gAlbedoSpec;
+uniform sampler2D gPositionMetal;
+uniform sampler2D gNormalRough;
+uniform sampler2D gAlbedoAO;
 uniform sampler2D texture_shadow;
 
 uniform vec3 sunDir;
 uniform vec3 lightColor;
+uniform float sunStrength;
 uniform vec3 viewPos;
 uniform mat4 inverseViewMat;
+uniform mat4 view;
 uniform mat4 lightSpaceMat;
 uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
+uniform float landSize;
+uniform bool drawFireflies;
 
 
 #define EPS 0.001
@@ -25,7 +33,13 @@ uniform float shadowBlurArea;
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
+
+
+
+
+
 // SHADOW MAPPING
+
 float seed;
 float rand(){
     seed = fract(sin(dot(vec2(seed), vec2(12.9898, 78.233))) * 43758.5453);
@@ -82,33 +96,173 @@ float calcShadow(vec4 fragLightSpace,vec3 normal,vec3 lDir){
     return smoothstep(0.0,1.0,shadow);
 }
 
+
+
+
+
+
+
+
+
+// PBR RENDERING
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0){
+    return F0 + (1-F0) * pow(clamp(1.0-cosTheta,0.0,1.0),5.0);
+}
+
+float DistributionGGX(vec3 N, vec3 H, float roughness){
+    float a = roughness*roughness;
+    float a2 = a*a;
+    float NdotH = max(dot(N,H),0.0);
+    float NdotH2 = NdotH*NdotH;
+
+    float divNum = NdotH2*(a2-1.0)+1.0;
+    divNum = M_PI * divNum * divNum;
+
+    return a2/divNum;
+}
+float GeometrySchlickGGX(float NdotV, float roughness){
+    float r = (roughness+1.0);
+    float k = (r*r) / 8.0;
+
+    float divNum = NdotV * (1.0-k) + k;
+
+    return NdotV/divNum;
+}
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
+    float NdotV = max(dot(N,V),0.0);
+    float NdotL = max(dot(N,L),0.0);
+
+    float ggx2 = GeometrySchlickGGX(NdotV,roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL,roughness);
+
+    return ggx1*ggx2;
+}
+
+vec3 pbr_sun_lighting(vec4 lightSpacePos,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo, float metalic, float roughness,float ao){
+    vec3 Lo;
+    vec3 H = normalize(N+V);
+    vec3 radiance =  lightColor;
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0,albedo,metalic);
+
+    vec3 F = fresnelSchlick(max(dot(H,V),0.0),F0);
+
+    float NDF = DistributionGGX(N,H,roughness);
+    float G   = GeometrySmith(N,V,L,roughness);
+
+    vec3 numerator = NDF*G*F;
+    float denominator = 4.0 * max(dot(N,V),0.0) * max(dot(N,L),0.0);
+    denominator = max(denominator,0.0001);
+
+    vec3 specular = numerator/denominator;
+    
+    vec3 kS = F;
+    vec3 kD = vec3(1.0)-kS;
+    kD *= (1.0-metalic);
+
+    float NdotL = max(dot(N,L),0.0);
+
+    Lo = (kD * albedo / M_PI + specular ) * radiance * NdotL * (1.0-calcShadow(lightSpacePos,N,L));
+    return Lo + vec3(0.03)*albedo*ao;
+}
+
+
+vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo, float metalic, float roughness,float ao){
+    vec3 Lo;
+    vec3 H = normalize(N+V);
+    //vec3 radiance =  lightColor / (1.0+dist*dist);
+    vec3 radiance =  lightColor / ((dist*5.0)*(dist*5.0)+1) * pow(max(1-dist,0.0),42);
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0,albedo,metalic);
+
+    vec3 F = fresnelSchlick(max(dot(H,V),0.0),F0);
+
+    float NDF = DistributionGGX(N,H,roughness);
+    float G   = GeometrySmith(N,V,L,roughness);
+
+    vec3 numerator = NDF*G*F;
+    float denominator = 4.0 * max(dot(N,V),0.0) * max(dot(N,L),0.0);
+    denominator = max(denominator,0.0001);
+
+    vec3 specular = numerator/denominator;
+    
+    vec3 kS = F;
+    vec3 kD = vec3(1.0)-kS;
+    kD *= (1.0-metalic);
+
+    float NdotL = max(dot(N,L),0.0);
+
+    Lo = (kD * albedo / M_PI + specular ) * radiance * NdotL;
+    return Lo + vec3(0.03)*albedo*ao;
+}
+
+
+// MAIN
 void main(){
+    seed = (gl_FragCoord.x/1980)*(gl_FragCoord.y/1080);
 
-    vec4 gPositionInfo = texture(gPosition, TexCoords);
-    vec3 FragPos = gPositionInfo.rgb;
-    float reflection = gPositionInfo.a;
+    vec4 gPositionMetal = texture(gPositionMetal, TexCoords);
+    vec4 gAlbedoAO = texture(gAlbedoAO, TexCoords);
+    vec4 gNormalRough = texture(gNormalRough, TexCoords);
 
-    vec4 gNormalInfo = texture(gNormal, TexCoords);
-    vec3 Normal = gNormalInfo.rgb;
+    vec3 FragPos = gPositionMetal.rgb;
+    float metalic = gPositionMetal.a;
+
+    float roughness = gNormalRough.a;
     
-    vec4 gAlbedoSpecInfo = texture(gAlbedoSpec, TexCoords);
-    vec3 Albedo = gAlbedoSpecInfo.rgb;
-    float Specular = gAlbedoSpecInfo.a;
+    vec3 Albedo = gAlbedoAO.rgb;
+    float AO = gAlbedoAO.a;
     
-    vec3 lighting;
-    if(length(Normal)<EPS){
-        lighting = Albedo * lightColor;
-    }else{
-        seed = length(FragPos);
-        lighting = Albedo * 0.1; // hard-coded ambient component
-        vec3 viewDir = normalize(-FragPos);
-        vec3 lightDir = normalize(sunDir);
-        vec3 halfWay = normalize(viewDir+lightDir);
-        vec4 lightSpacePos = lightSpaceMat*(inverseViewMat*vec4(FragPos,1.0));
-        vec3 diffuse = (max(dot(Normal, lightDir), 0.0) * Albedo * lightColor + lightColor * max(pow(dot(Normal,halfWay),40.0),0.0)*Specular) * (1.0-calcShadow(lightSpacePos,Normal,lightDir));
-        lighting += diffuse;
+    vec3 lighting = vec3(0.0);
+    vec4 lightSpacePos = lightSpaceMat*(inverseViewMat*vec4(FragPos,1.0));
+
+    /*
+    float Specular = 1.0-gNormalRough.a;
+    seed = length(FragPos);
+    lighting = Albedo * 0.1; // hard-coded ambient component
+    vec3 viewDir = normalize(-FragPos);
+    vec3 lightDir = normalize(sunDir);
+    vec3 halfWay = normalize(viewDir+lightDir);
+    vec3 diffuse = (max(dot(Normal, lightDir), 0.0) * Albedo * lightColor + lightColor * max(pow(dot(Normal,halfWay),40.0),0.0)*Specular) * (1.0-calcShadow(lightSpacePos,Normal,lightDir));
+    lighting += diffuse;
+    */
+    vec3 Normal = gNormalRough.rgb;
+    vec3 globalFragPos = (inverseViewMat * vec4(FragPos,1.0)).xyz;
+    if(length(Normal)<EPS)
+        if(AO<0.0)
+            lighting += Albedo*lightColor;
+        else
+            lighting += Albedo;
+    else{
+        Normal = normalize(Normal);
+        lighting += pbr_sun_lighting(lightSpacePos,lightColor*sunStrength,normalize(sunDir),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
+        int i,j;
+        vec2 gridPos = (globalFragPos.xz/landSize+0.5)*32;
+        i = int(floor(gridPos.x));
+        j = int(floor(gridPos.y));
+        if(drawFireflies){
+            for(int s=-1;s<=1;s++){
+                for(int t=-1;t<=1;t++){
+                    int xPos = i+s;
+                    int yPos = j+t;
+                    /*if(xPos<0 || xPos>31 ||
+                    yPos<0 || yPos>31  ){
+                        continue;
+                    }*/
+                    int idx = (i+s)*32+(j+t);
+                    vec3 lPos = vec3(flyinfo.pos[5*idx+0],flyinfo.pos[5*idx+1],flyinfo.pos[5*idx+2]);
+                    float dist = distance(globalFragPos,lPos);
+                    if(dist<2.0){
+                        vec3 viewLPos = (view * vec4(lPos,1.0)).xyz;
+                        lighting += pbr_sun_point(dist,vec3(0.91,0.94,0.4)*flyinfo.pos[5*idx+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
+                    }
+                }
+            }
+        }
     }
-
     
     FragColor = vec4(lighting, 1.0);
 }

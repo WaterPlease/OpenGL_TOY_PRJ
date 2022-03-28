@@ -1,8 +1,8 @@
 #version 430 core
 
-layout (location = 0) out vec4 gPosition;
-layout (location = 1) out vec4 gNormal;
-layout (location = 2) out vec4 gAlbedoSpec;
+layout (location = 0) out vec4 gPositionMetal;
+layout (location = 1) out vec4 gNormalRough;
+layout (location = 2) out vec4 gAlbedoAO;
 
 #define GRASS_COLOR vec3(0.0,0.7,0.0)
 
@@ -110,9 +110,12 @@ void main()
        abs(dot(viewDir,fNormal))<0.1)
         discard;
 
-    gPosition.xyz = (view*vec4(worldPos,1.0)).xyz;
-    gPosition.w = -1.0;
-    gNormal.xyz = normalize((view*vec4(0.0,1.0,0.0,0.0)).xyz);
-    gAlbedoSpec.rgb = color.rgb;
-    gAlbedoSpec.a   = 0.0;
+    gPositionMetal.xyz = (view*vec4(worldPos,1.0)).xyz;
+    gPositionMetal.w = 0.0;
+
+    gNormalRough.xyz = normalize((view*vec4(0.0,1.0,0.0,0.0)).xyz);
+    gNormalRough.w = 1.0;
+
+    gAlbedoAO.rgb = color.rgb*1.2;
+    gAlbedoAO.a   = 1.0;
 }

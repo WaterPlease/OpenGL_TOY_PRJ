@@ -18,11 +18,12 @@ float waterSize = 1.0f;
 float waterLambda = 0.1;
 float waterLevel = 2.0f;
 float uvFactorWater = 10.0f;
-float uvFactorRock = 300.0;
+float uvFactorRock = 100.0;
 float uvFactorGrass = 100.0;
 float max_height = 15.0f;
 float water_waveLength = 20.0f;
 float water_steepness = 0.5f;
+float water_transparency = 0.3;
 float grass_waveLength = 10.5f;
 float grass_steepness = 0.02f;
 float grassProb = 1.0;
@@ -37,10 +38,12 @@ int shadowFactor = 1;
 float shadowBlurJitter = 1.256;
 float shadowBlurArea = 2.6232f;
 
+bool drawFireflies = true;
+
 unsigned int texture_skybox;
 
 float ssr_maxDistance = 30.0f;
 float ssr_resolution = 0.5f;
-int   ssr_lin_steps = 100;
+int   ssr_lin_steps = 75;
 int   ssr_bin_steps = 5;
 float ssr_thickness = 1.0f;
