@@ -57,65 +57,46 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.fs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tcs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tes", nullptr);
-    objs.push_back(new TerrainObject(0.065231*8.0f,landSize,ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
+    objs.push_back(new TerrainObject(0.065231*8.0f, ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
     //objs.push_back(new TerrainObject(0, 0, 10.0f));
 }
 
-void Engine::loop() {
+void Engine::Loop() {
     std::cout << "RENDER START\n";
-    mainCam->updateMat();
+    mainCam->UpdateMat();
     while (!glfwWindowShouldClose(window)) {
         // Time update
         timeMng.updateTime();
 
+        // GUI PRE-RENDER
         ImGuiIO& io = ImGui::GetIO();
         if (!(io.WantCaptureKeyboard || io.WantCaptureMouse)) {
             engine_input_handler(window);
         }
-        // Generate shadeow map
-        sun->begin();
-        for (auto iter = objs.begin(); iter != objs.end(); iter++) {
-            BaseObject* ptr_obj = *iter;
-            if (ptr_obj->getClassID() == ObjClass::Simple) {
-                SimpleObject& simpleObj = *(SimpleObject*)ptr_obj;
-                if (simpleObj.make_shadow)
-                    simpleObj.shadowDraw();
-            }
-            else if (ptr_obj->getClassID() == ObjClass::Terrain) {
-                TerrainObject& terrain = *(TerrainObject*)ptr_obj;
-                terrain.shadowDraw();
-            }
-        }
-        sun->end();
-
-        // Renderer draw
-        renderer.startFrameRender();
-
-        // GUI PRE-RENDER
-        if (renderUI) {
+        if (bDrawGUI) {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             {
                 ImGui::Begin("Graphic setting");                          // Create a window called "Hello, world!" and append into it.
 
-                if (ImGui::SliderInt("Ground tessLvl", &GROUND_TESS_LEVEL, 1, 64) ||
-                    ImGui::SliderInt("Grass tessLvl", &GRASS_INST_LEVEL, 32, 1024) ||
-                    ImGui::SliderInt("Water tessLvl", &WATER_TESS_LEVEL, 1, 64)) {
-                    parameter_changed = true;
+                if (ImGui::SliderInt("Ground tessLvl", &TESS_GROUND_LEVEL, 1, 64) ||
+                    ImGui::SliderInt("Grass tessLvl", &INSTANCE_GRASS_LEVEL, 32, 1024) ||
+                    ImGui::SliderInt("Water tessLvl", &TESS_WATER_LEVEL, 1, 64)) {
+                    bPrameterChange = true;
                 }
-                if (ImGui::SliderFloat("shadowBlur jit", &shadowBlurJitter, 0.0f, 5.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("shadowBlur area", &shadowBlurArea, 0.1f, 10.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("gamma", &gamma, 0.0f, 3.0f, "%.3f", 1.0f)) {
-                    parameter_changed = true;
+                if (ImGui::SliderFloat("shadowBlur jit", &SHADOW_BLUR_JITTER, 0.0f, 5.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("shadowBlur area", &SHADOW_BLUR_AREA, 0.1f, 10.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("gamma", &GAMMA, 0.0f, 3.0f, "%.3f", 1.0f)) {
+                    bPrameterChange = true;
                 }
                 ImGui::Text("SSR setting");
-                if (ImGui::InputFloat("ssr_maxDistance", &ssr_maxDistance) ||
-                    ImGui::InputFloat("ssr_resolution", &ssr_resolution) ||
-                    ImGui::InputInt("ssr_lin_steps", &ssr_lin_steps) ||
-                    ImGui::InputInt("ssr_bin_steps", &ssr_bin_steps) ||
-                    ImGui::InputFloat("ssr_thickness", &ssr_thickness)) {
-                    parameter_changed = true;
+                if (ImGui::InputFloat("ssr_maxDistance", &SSR_DISTANCE) ||
+                    ImGui::InputFloat("ssr_resolution", &SSR_RESOLUTION) ||
+                    ImGui::InputInt("ssr_lin_steps", &SSR_LIN_STEPS) ||
+                    ImGui::InputInt("ssr_bin_steps", &SSR_BIN_STEPS) ||
+                    ImGui::InputFloat("ssr_thickness", &SSR_THICKNESS)) {
+                    bPrameterChange = true;
                 }
                 ImGui::ColorEdit3("clear color", (float*)&(renderer.clearColor[0])); // Edit 3 floats representing a color
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -123,37 +104,37 @@ void Engine::loop() {
             }
             {
                 ImGui::Begin("Terrain setting");
-                if (ImGui::SliderFloat("uvFactorRock", &uvFactorRock, 1.0f, 1000.f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("uvFactorGrass", &uvFactorGrass, 1.0f, 1000.f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("uvFactorWater", &uvFactorWater, 1.0f, 1000.f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("max_height", &max_height, 0.0f, 100.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("waterSize", &waterSize, 1.0f, 8.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("waterLevel", &waterLevel, -0.5f, max_height, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("water waveLength", &water_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("water steepness", &water_steepness, 0.1f, 1.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("water transparency", &water_transparency, 0.1f, 10.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("water time speed", &waterLambda, 0.0f, 1.0f) ||
-                    ImGui::SliderFloat("grass waveLength", &grass_waveLength, 1.0f, 100.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("grass steepness", &grass_steepness, 0.0f, 0.5f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("grass probability", &grassProb, 0.0f, 1.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("grass size", &grassSize, 0.0f, 5.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("grass gen crit", &grassCrit, 0.7f, 1.0f, "%.3f", 1.0f) ||
+                if (ImGui::SliderFloat("uvFactorRock", &LAND_ROCK_UV_FACTOR, 1.0f, 1000.f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("uvFactorGrass", &LAND_GRASS_UV_FACTOR, 1.0f, 1000.f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("uvFactorWater", &WATER_UV_FACTOR, 1.0f, 1000.f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("max_height", &LAND_HEIGHT, 0.0f, 100.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("waterSize", &WATER_SIZE, 1.0f, 8.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("waterLevel", &WATER_LEVEL, -0.5f, LAND_HEIGHT, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("water waveLength", &WATER_WAVE_LENGTH, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("water steepness", &WATER_WAVE_STEEPENSS, 0.1f, 1.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("water transparency", &WATER_TRANSPARENCY, 0.1f, 10.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("water time speed", &WATER_TIME_FACTOR, 0.0f, 1.0f) ||
+                    ImGui::SliderFloat("grass waveLength", &GRASS_WAVE_LENGTH, 1.0f, 100.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("grass steepness", &GRASS_WAVE_STEEPNESS, 0.0f, 0.5f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("grass probability", &GRASS_DENSITY, 0.0f, 1.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("grass size", &GRASS_SIZE, 0.0f, 5.0f, "%.3f", 1.0f) ||
+                    ImGui::SliderFloat("grass gen crit", &GRASS_SLOPE_CRITERION, 0.7f, 1.0f, "%.3f", 1.0f) ||
                     ImGui::SliderFloat3("sun dir", &(sun->lightDir[0]), -1.0f, 1.0f, "%.3f", 1.0f)) {
-                    parameter_changed = true;
+                    bPrameterChange = true;
 
                 }
                 ImGui::End();
             }
             {
                 ImGui::Begin("Control setting");
-                ImGui::SliderFloat("move speed", &speed, 1.0f, 100.0f, "%.3f", 1.0f);
-                ImGui::SliderFloat("rotation speed", &rotSpeed, 0.01f, 1.0f, "%.3f", 1.0f);
-                if (ImGui::SliderFloat("time speed", &tSpeed, -3.0f, 3.0f, "%.3f", 1.0f)) {
-                    timeMng.setSpeed((double)tSpeed);
+                ImGui::SliderFloat("move speed", &CAM_MOVE_SPEED, 1.0f, 100.0f, "%.3f", 1.0f);
+                ImGui::SliderFloat("rotation speed", &CAM_ROT_SPEED, 0.01f, 1.0f, "%.3f", 1.0f);
+                if (ImGui::SliderFloat("time speed", &TIME_SPEED, -3.0f, 3.0f, "%.3f", 1.0f)) {
+                    timeMng.setSpeed((double)TIME_SPEED);
                 }
                 if (ImGui::ColorEdit3("Sun color", &(sun->color[0])) ||
-                    ImGui::InputFloat("Sun strength",&sun->lightStrength)) {
-                    parameter_changed = true;
+                    ImGui::InputFloat("Sun strength", &sun->lightStrength)) {
+                    bPrameterChange = true;
                 }
                 ImGui::End();
             }
@@ -181,20 +162,41 @@ void Engine::loop() {
                     if (ptr_obj->getClassID() == ObjClass::Simple) {
                         SimpleObject& obj = *(SimpleObject*)ptr_obj;
                         ImGui::Text(obj.name.c_str());
-                        if (ImGui::SliderFloat3("Pos", &obj.pos[0], -landSize / 2.0f, landSize / 2.0f, "%.3f", 1.0f) ||
+                        if (ImGui::SliderFloat3("Pos", &obj.pos[0], -LANDSIZE / 2.0f, LANDSIZE / 2.0f, "%.3f", 1.0f) ||
                             ImGui::InputFloat("scale", &obj.scale)) {
-                            parameter_changed = true;
+                            bPrameterChange = true;
                         }
                     }
                 }
                 ImGui::Text("Firefly");
-                if (ImGui::Checkbox("Draw fireflies ?", &drawFireflies))
-                    parameter_changed = true;
+                if (ImGui::Checkbox("Draw fireflies ?", &bDrawFireflies))
+                    bPrameterChange = true;
                 ImGui::End();
             }
         }
+
+
+        // Generate shadeow map
+        sun->Begin();
+        for (auto iter = objs.begin(); iter != objs.end(); iter++) {
+            BaseObject* ptr_obj = *iter;
+            if (ptr_obj->getClassID() == ObjClass::Simple) {
+                SimpleObject& simpleObj = *(SimpleObject*)ptr_obj;
+                if (simpleObj.make_shadow)
+                    simpleObj.shadowDraw();
+            }
+            else if (ptr_obj->getClassID() == ObjClass::Terrain) {
+                TerrainObject& terrain = *(TerrainObject*)ptr_obj;
+                terrain.shadowDraw();
+            }
+        }
+        sun->End();
+
+        // Renderer draw
+        renderer.StartFrameRender();
+
         //std::cout << "STG 0\n";
-        if (wireMode) {
+        if (bWireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         // object rendering
@@ -213,11 +215,11 @@ void Engine::loop() {
                 terrain.draw();
             }else if (ptr_obj->getClassID() == ObjClass::FireFlies) {
                 FireFliesObject& obj = *(FireFliesObject*)ptr_obj;
-                if(drawFireflies)
+                if(bDrawFireflies)
                     obj.draw();
             }
         }
-        if (wireMode) {
+        if (bWireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         //std::cout << "STG 1\n";
@@ -229,7 +231,7 @@ void Engine::loop() {
         renderer.postProcess();
         //std::cout << "STG 3\n";
         // GUI render on opengl screen
-        if (renderUI) {
+        if (bDrawGUI) {
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
@@ -267,13 +269,13 @@ void engine_input_handler(GLFWwindow* window) {
     
     bool isWPressed = glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS;
     if (isWPressed && (now- lastPPress)>0.05) {
-        if (wireMode) {
+        if (bWireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
-        wireMode = !wireMode;
+        bWireMode = !bWireMode;
         lastPPress = now;
     }else if(isWPressed &&(now - lastPPress) <= 0.05) {
         lastPPress = now;
@@ -281,7 +283,7 @@ void engine_input_handler(GLFWwindow* window) {
 
     isWPressed = glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS;
     if (isWPressed && (now - lastPPress) > 0.05) {
-        renderUI = !renderUI;
+        bDrawGUI = !bDrawGUI;
         lastPPress = now;
     }
     else if (isWPressed && (now - lastPPress) <= 0.05) {
@@ -291,38 +293,38 @@ void engine_input_handler(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         glm::vec3 xyProjection = mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f);
         if (glm::length(xyProjection) > 1e-3) {
-            mainCam->target += dt * speed * glm::normalize(mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f));
-            mainCam->updatePos();
-            mainCam->updateMat();
+            mainCam->target += dt * CAM_MOVE_SPEED * glm::normalize(mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f));
+            mainCam->UpdatePos();
+            mainCam->UpdateMat();
         }
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         glm::vec3 xyProjection = mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f);
         if (glm::length(xyProjection) > 1e-3) {
-            mainCam->target -= dt * speed * glm::normalize(mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f));
-            mainCam->updatePos();
-            mainCam->updateMat();
+            mainCam->target -= dt * CAM_MOVE_SPEED * glm::normalize(mainCam->front - glm::vec3(0.0f, mainCam->front.y, 0.0f));
+            mainCam->UpdatePos();
+            mainCam->UpdateMat();
         }
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        mainCam->target += dt * speed * mainCam->right;
-        mainCam->updatePos();
-        mainCam->updateMat();
+        mainCam->target += dt * CAM_MOVE_SPEED * mainCam->right;
+        mainCam->UpdatePos();
+        mainCam->UpdateMat();
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        mainCam->target -= dt * speed * mainCam->right;
-        mainCam->updatePos();
-        mainCam->updateMat();
+        mainCam->target -= dt * CAM_MOVE_SPEED * mainCam->right;
+        mainCam->UpdatePos();
+        mainCam->UpdateMat();
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        mainCam->target += glm::vec3(0.0f, dt * speed, 0.0f);
-        mainCam->updatePos();
-        mainCam->updateMat();
+        mainCam->target += glm::vec3(0.0f, dt * CAM_MOVE_SPEED, 0.0f);
+        mainCam->UpdatePos();
+        mainCam->UpdateMat();
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-        mainCam->target += glm::vec3(0.0f, -dt * speed, 0.0f);
-        mainCam->updatePos();
-        mainCam->updateMat();
+        mainCam->target += glm::vec3(0.0f, -dt * CAM_MOVE_SPEED, 0.0f);
+        mainCam->UpdatePos();
+        mainCam->UpdateMat();
     }
 
 
@@ -333,12 +335,12 @@ void engine_input_handler(GLFWwindow* window) {
             mouse_dragged = true;
         }
         glfwGetCursorPos(window, &mouse_xpos, &mouse_ypos);
-        mainCam->phi -= rotSpeed * (float)(mouse_xpos - prev_xpos);
-        mainCam->theta -= rotSpeed * (float)(mouse_ypos - prev_ypos);
+        mainCam->phi -= CAM_ROT_SPEED * (float)(mouse_xpos - prev_xpos);
+        mainCam->theta -= CAM_ROT_SPEED * (float)(mouse_ypos - prev_ypos);
         prev_xpos = mouse_xpos;
         prev_ypos = mouse_ypos;
-        mainCam->updateRot();
-        mainCam->updateMat();
+        mainCam->UpdateRot();
+        mainCam->UpdateMat();
     }
     else {
         mouse_dragged = false;

@@ -61,12 +61,12 @@ float calcShadow(vec4 fragLightSpace,vec3 normal,vec3 lDir){
     
     float currentDepth = pos.z;
     
-    float bias = max(0.05 * (1.0 - dot(normal, lDir)), 0.005);
+    float bias = max(0.005 * (1.0 - dot(normal, lDir)), 0.005);
 
     float shadow = 0.0;
     if(pos.z>1.0){
         //
-    }else if(dot(normal,lDir)<EPS){
+    }else if(dot(normal,lDir)<0.0){
         shadow = 1.0;
     }else{
         float pcfDepth;

@@ -7,9 +7,9 @@
 
 int main()
 {
-    auto app = Engine("OpenGL Project", screen_x, screen_y);
+    auto app = Engine("OpenGL Project", SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    app.loop();
+    app.Loop();
 
     return 0;
 }

@@ -21,7 +21,7 @@ class Engine {
 	vector<BaseObject*> objs;
 public:
 	Engine(const char* title, int width, int height);
-	void loop();
+	void Loop();
 };
 
 void engine_resoultion_callback(GLFWwindow* window, int width, int height);

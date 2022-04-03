@@ -3,50 +3,54 @@
 
 #include "glm_pre.h"
 
-extern bool parameter_changed;
 
-extern bool renderUI;
+// RENDERING SETTING
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
 
-extern int screen_x;
-extern int screen_y;
+extern unsigned int GL_TEXTURE_SKYBOX;
 
-extern int GROUND_TESS_LEVEL;
-extern int GRASS_INST_LEVEL;
-extern int WATER_TESS_LEVEL;
-extern float gamma;
-extern int shadowFactor;
-extern float shadowBlurJitter;
-extern float shadowBlurArea;
-extern float ssr_maxDistance;
-extern float ssr_resolution;
-extern int   ssr_lin_steps;
-extern int   ssr_bin_steps;
-extern float ssr_thickness;
+extern bool bPrameterChange;
+extern bool bDrawGUI;
+extern bool bDrawFireflies;
 
+extern bool bWireMode;
 
-extern float landSize;
-extern float waterSize;
-extern float waterLambda;
-extern float waterLevel;
-extern float uvFactorWater;
-extern float uvFactorRock;
-extern float uvFactorGrass;
-extern float max_height;
+// GRAPHICAL SETTING
+extern int TESS_GROUND_LEVEL;
+extern int TESS_WATER_LEVEL;
+extern int INSTANCE_GRASS_LEVEL;
+extern float GAMMA;
+extern float SHADOW_BLUR_JITTER;
+extern float SHADOW_BLUR_AREA;
+extern float SSR_DISTANCE;
+extern float SSR_RESOLUTION;
+extern int   SSR_LIN_STEPS;
+extern int   SSR_BIN_STEPS;
+extern float SSR_THICKNESS;
 
-extern float water_waveLength;
-extern float water_steepness;
-extern float water_transparency;
-extern float grass_waveLength;
-extern float grass_steepness;
-extern float grassProb;
-extern float grassSize;
-extern float grassCrit;
+// TERRAIN SETTING
+extern float LANDSIZE;
+extern float LAND_HEIGHT;
 
-extern float speed;
-extern float rotSpeed;
-extern float tSpeed;
+extern float WATER_SIZE;
+extern float WATER_TIME_FACTOR;
+extern float WATER_LEVEL;
+extern float WATER_UV_FACTOR;
+extern float WATER_WAVE_LENGTH;
+extern float WATER_WAVE_STEEPENSS;
+extern float WATER_TRANSPARENCY;
 
+extern float LAND_ROCK_UV_FACTOR;
+extern float LAND_GRASS_UV_FACTOR;
 
-extern unsigned int texture_skybox;
-extern bool drawFireflies;
+extern float GRASS_WAVE_LENGTH;
+extern float GRASS_WAVE_STEEPNESS;
+extern float GRASS_DENSITY;
+extern float GRASS_SIZE;
+extern float GRASS_SLOPE_CRITERION;
+
+extern float CAM_MOVE_SPEED;
+extern float CAM_ROT_SPEED;
+extern float TIME_SPEED;
 #endif
