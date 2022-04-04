@@ -81,6 +81,9 @@
     <ClCompile Include="src\util.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\PathMng.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Engine.h">
@@ -155,15 +158,66 @@
     <ClInclude Include="includes\util.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="includes\PathMng.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\default.vs">
+    <None Include="Doc\TODO.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="Doc\gBuffer.md">
+      <Filter>Doc</Filter>
+    </None>
+    <None Include="shader\blur.cs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
     <None Include="shader\default.fs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\terrain.vs">
+    <None Include="shader\default.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\default_shadow.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\deffered.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\extract.cs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\FidelityFX_SSSR.cs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\flyShader.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\flyShader.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\flyUpdate.cs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\grass.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\grass.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\hdrShader.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\postProcess.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\skybox.fs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\skybox.vs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
+    <None Include="shader\ssr.fs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
     <None Include="shader\terrain.fs">
@@ -175,28 +229,7 @@
     <None Include="shader\terrain.tes">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\grass.fs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\grass.vs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="Doc\TODO.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="shader\water.vs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\water.fs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\water.tcs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\water.tes">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\water.gs">
+    <None Include="shader\terrain.vs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
     <None Include="shader\terrain_shadow.fs">
@@ -211,46 +244,19 @@
     <None Include="shader\terrain_shadow.vs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\skybox.vs">
+    <None Include="shader\water.fs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\skybox.fs">
+    <None Include="shader\water.gs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\extract.cs">
+    <None Include="shader\water.tcs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\postProcess.vs">
+    <None Include="shader\water.tes">
       <Filter>리소스 파일\Shader</Filter>
     </None>
-    <None Include="shader\hdrShader.fs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\deffered.fs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\blur.cs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\ssr.cs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\ssr.fs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="Doc\gBuffer.md">
-      <Filter>Doc</Filter>
-    </None>
-    <None Include="shader\default_shadow.vs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\flyUpdate.cs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\flyShader.vs">
-      <Filter>리소스 파일\Shader</Filter>
-    </None>
-    <None Include="shader\flyShader.fs">
+    <None Include="shader\water.vs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
   </ItemGroup>

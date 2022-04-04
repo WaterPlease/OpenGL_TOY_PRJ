@@ -19,17 +19,14 @@ uniform float waterLevel;
 uniform vec3 camPos;
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat4 lightSpaceMat;
 uniform float grassCrit;
 uniform float grassProb;
 uniform float steepness;
 uniform float waveLength;
 uniform float time;
-uniform vec3 lightDir;
 
 out vec3 worldPos;
 out vec2 texCoords;
-out vec4 lightSpacePos;
 out vec3 fNormal;
 out vec3 viewDir;
 
@@ -136,7 +133,7 @@ void main(void)
     if(testVal_3d < cosHalfDiag ||
        planeWeight < grassCrit  ||
        underWater         ||
-       rand(vec2(r2)) > prob){//  || pos.y>2.2 ){
+       rand(vec2(r2)) > prob){
        gl_Position = vec4(-10000.0,-10000.0,-10000.0,1.0);
     }else{
         mat4 rot;
@@ -151,11 +148,8 @@ void main(void)
         globalPos.xyz = (vPos.y > EPS)? multi_trochoidal(globalPos.xyz,1.0) : globalPos.xyz;
 
         texCoords = aTex;
-        lightSpacePos = lightSpaceMat * globalPos;
         gl_Position = projection * view * globalPos;
         fNormal = normalize((rot * vec4(aNormal,0.0)).xyz);
-        //if(dot(fNormal,lightDir)<0)
-        //    fNormal = -fNormal;
         viewDir = normalize(camPos-globalPos.xyz);
         worldPos = globalPos.xyz;
     }    

@@ -35,6 +35,7 @@
     <ClCompile Include="src\Model.cpp" />
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Parameter.cpp" />
+    <ClCompile Include="src\PathMng.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\util.cpp" />
   </ItemGroup>
@@ -58,6 +59,7 @@
     <ClInclude Include="includes\Model.hpp" />
     <ClInclude Include="includes\Object.h" />
     <ClInclude Include="includes\Parameter.h" />
+    <ClInclude Include="includes\PathMng.h" />
     <ClInclude Include="includes\Renderer.h" />
     <ClInclude Include="includes\Shader.hpp" />
     <ClInclude Include="includes\stb_image.h" />
@@ -67,12 +69,13 @@
   <ItemGroup>
     <None Include="Doc\gBuffer.md" />
     <None Include="Doc\TODO.md" />
-    <None Include="shader\default_shadow.vs" />
-    <None Include="shader\extract.cs" />
     <None Include="shader\blur.cs" />
     <None Include="shader\default.fs" />
     <None Include="shader\default.vs" />
+    <None Include="shader\default_shadow.vs" />
     <None Include="shader\deffered.fs" />
+    <None Include="shader\extract.cs" />
+    <None Include="shader\FidelityFX_SSSR.cs" />
     <None Include="shader\flyShader.fs" />
     <None Include="shader\flyShader.vs" />
     <None Include="shader\flyUpdate.cs" />
@@ -82,7 +85,6 @@
     <None Include="shader\postProcess.vs" />
     <None Include="shader\skybox.fs" />
     <None Include="shader\skybox.vs" />
-    <None Include="shader\ssr.cs" />
     <None Include="shader\ssr.fs" />
     <None Include="shader\terrain.fs" />
     <None Include="shader\terrain.tcs" />

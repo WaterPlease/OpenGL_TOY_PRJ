@@ -20,10 +20,6 @@ uniform sampler2D texture_ao_rock;
 
 uniform sampler2D texture_shadow;
 
-uniform vec3 lightDir;
-uniform vec3 camPos;
-uniform float max_height;
-uniform int shadowFactor;
 uniform float uvFactorRock;
 uniform float uvFactorGrass;
 uniform float grassCrit;
@@ -35,7 +31,6 @@ in FGINFO
     vec2 uv;
     mat3 TBN;
     vec3 pos;
-    vec4 lightSpacePos;
 }fginfo;
 uniform mat4 view;
 

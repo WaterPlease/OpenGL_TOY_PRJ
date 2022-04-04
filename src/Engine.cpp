@@ -8,20 +8,10 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
     // callback for resolution changed.
     glfwSetFramebufferSizeCallback(window, engine_resoultion_callback);
 
-    // Debug area
-    /*
-    objs.push_back(new SimpleObject());
-    SimpleObject& obj = *(SimpleObject*)(objs.back());
-
-    
-
-    obj.setShader(new Shader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.vs",
-        "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\default.fs",nullptr,nullptr));
-    */
     objs.push_back(new FireFliesObject());
     objs.push_back(new SimpleObject("lightHouse"));
     SimpleObject& obj = *(SimpleObject*)(objs.back());
-    obj.setModel(new Model("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\x64\\Debug\\model\\lighthouse\\uploads_files_2841766_Lighthouse.obj"));
+    obj.setModel(new Model(pathMng.getAbsPath("model\\lighthouse\\uploads_files_2841766_Lighthouse.obj")));
     std::cout << "Texture loaded\n";
     for (Texture texture : obj.getModel()->textures_loaded) {
         std::cout << "Texture : " << texture.type << "\n";
@@ -58,7 +48,8 @@ Engine::Engine(const char* title, int width, int height):renderer(title, width, 
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tcs",
         "C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\terrain_shadow.tes", nullptr);
     objs.push_back(new TerrainObject(0.065231*8.0f, ptr_shader, ptr_shadow_shader, ptr_grass_shader,ptr_water_shader));
-    //objs.push_back(new TerrainObject(0, 0, 10.0f));
+
+    pathMng.PrintCWD();
 }
 
 void Engine::Loop() {

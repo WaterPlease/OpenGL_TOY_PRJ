@@ -13,6 +13,7 @@
 
 #include "Object.h"
 #include "GUI.h"
+#include "PathMng.h"
 
 class Engine {
 	std::string title;

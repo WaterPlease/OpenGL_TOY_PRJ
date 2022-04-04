@@ -7,6 +7,8 @@
 #include "Model.hpp"
 #include "Camera.h"
 #include "Parameter.h"
+#include "util.h"
+#include "PathMng.h"
 
 enum ObjClass {
 	Base,
@@ -96,7 +98,6 @@ public:
 
 class TerrainObject : public BaseObject {
 	GLfloat patchSize;
-	GLfloat grass_patchSize;
 	int numAxisPatch;
 	int grass_numAxisPatch;
 

@@ -39,7 +39,7 @@ void Sun::Begin() {
 	//glCullFace(GL_FRONT);
 }
 
-inline void Sun::End() {
+void Sun::End() {
 	//glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

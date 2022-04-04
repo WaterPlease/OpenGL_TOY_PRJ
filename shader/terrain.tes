@@ -9,10 +9,7 @@ uniform sampler2D texture_height;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float max_height;
-uniform int numAxisPatches;
-uniform float patchSize;
 uniform float landSize;
-uniform mat4 lightSpaceMat;
 
 
 out FGINFO
@@ -20,7 +17,6 @@ out FGINFO
     vec2 uv;
     mat3 TBN;
     vec3 pos;
-    vec4 lightSpacePos;
 }fginfo;
 
 vec2 getUV(vec3 pos,float minVal,float maxVal){
@@ -86,5 +82,4 @@ void main(void){
     fginfo.TBN = mat3(tan,bitan,normal);
 
     gl_Position = projection * view * tessPos;
-    fginfo.lightSpacePos = lightSpaceMat * tessPos;
 }

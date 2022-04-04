@@ -13,13 +13,11 @@ uniform float landSize;
 uniform float waveLength;
 uniform float steepness;
 uniform float waterLevel;
-uniform mat4 lightSpaceMat;
 
 out VS_OUT{
     vec3 FragPos;
     vec2 TexCoords;
     mat3 TBN;
-    vec4 lightSpacePos;
 } vs_out;
 
 float rand(vec2 co){
@@ -99,19 +97,16 @@ void main() {
     vs_out.FragPos = res0[0]+vec3(0.0,waterLevel,0.0);
     vs_out.TexCoords = getUV(res0[0]);
     vs_out.TBN = mat3(res0[1],res0[2],res0[3]);
-    vs_out.lightSpacePos = lightSpaceMat * vec4(vs_out.FragPos,1.0);
     gl_Position = projection * view * vec4(vs_out.FragPos,1.0);
     EmitVertex();
     vs_out.FragPos = res1[0]+vec3(0.0,waterLevel,0.0);
     vs_out.TexCoords = getUV(res1[0]);
     vs_out.TBN = mat3(res1[1],res1[2],res1[3]);
-    vs_out.lightSpacePos = lightSpaceMat * vec4(vs_out.FragPos,1.0);
     gl_Position = projection * view * vec4(vs_out.FragPos,1.0);
     EmitVertex();
     vs_out.FragPos = res2[0]+vec3(0.0,waterLevel,0.0);
     vs_out.TexCoords = getUV(res2[0]);
     vs_out.TBN = mat3(res2[1],res2[2],res2[3]);
-    vs_out.lightSpacePos = lightSpaceMat * vec4(vs_out.FragPos,1.0);
     gl_Position = projection * view * vec4(vs_out.FragPos,1.0);
     EmitVertex();
 

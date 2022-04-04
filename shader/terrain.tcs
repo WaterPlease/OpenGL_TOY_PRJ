@@ -1,9 +1,8 @@
 #version 430 core
 
-uniform int tessLevel;
-
 layout (vertices = 4) out;
 
+uniform int tessLevel;
 uniform vec3 camPos;
 uniform vec3 camFront;
 uniform float cosHalfDiag;
