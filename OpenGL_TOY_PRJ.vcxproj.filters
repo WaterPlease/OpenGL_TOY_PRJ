@@ -25,6 +25,9 @@
     <Filter Include="헤더 파일\imgui">
       <UniqueIdentifier>{beabefaf-8ba8-4987-91ca-3ef4f2109662}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Doc\Imgs">
+      <UniqueIdentifier>{5b429e84-d43e-4351-96c6-2476906457ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
