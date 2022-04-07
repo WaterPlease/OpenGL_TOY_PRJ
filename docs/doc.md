@@ -26,7 +26,7 @@
   
     파란 부분은 그림자 안쪽에 위치해 4번의 sampling만 시행한 부분이며,  붉은색~검은색 부분은 그림자 경계에 위치해 64번의 sampling을 시행한 부분이다
   
-  - \[**reference**\]: https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-17-efficient-soft-edged-shadows-using	"GPU Gems 2, Chapter 17. Efficient Soft-Edged Shadows Using Pixel Shader Branching"
+  - **reference** :  https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-17-efficient-soft-edged-shadows-using	"GPU Gems 2, Chapter 17. Efficient Soft-Edged Shadows Using Pixel Shader Branching"
   
 - Tone mapping, gamma correction
 
