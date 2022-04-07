@@ -11,6 +11,15 @@
 #### 주요 기능
 
 - Deffered rendering
+
+​			Composition of gBuffer
+
+| buffers       | R          | G          | B          | A     |
+| ------------- | ---------- | ---------- | ---------- | ----- |
+| PositionMetal | Position X | Position Y | Position Z | Metal |
+| NormalRough   | Normal X   | Normal Y   | Normal Z   | Rough |
+| AlbedoSpec    | Albedo R   | Albedo G   | Albedo B   | AO    |
+
 - Screen space reflection
 
 <img src="./Imgs/ssr_flat.png" alt="ssr_flat" style="width:40%;" /><img src="./Imgs/ssr_wave.png" alt="ssr_wave" style="width:40%;" />
