@@ -5,6 +5,8 @@
 Engine::Engine(const char* title, int width, int height):renderer(title, width, height) {
     window = renderer.getWindow();
 
+    glGenQueries(1, &queryBuffer);
+
     // callback for resolution changed.
     glfwSetFramebufferSizeCallback(window, engine_resoultion_callback);
 
@@ -61,10 +63,10 @@ void Engine::Loop() {
 
         // GUI PRE-RENDER
         ImGuiIO& io = ImGui::GetIO();
-        if (!(io.WantCaptureKeyboard || io.WantCaptureMouse)) {
+        if (!(io.WantCaptureKeyboard || io.WantCaptureMouse || bBenchmark)) {
             engine_input_handler(window);
         }
-        if (bDrawGUI) {
+        if (!bBenchmark && bDrawGUI) {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
@@ -164,8 +166,25 @@ void Engine::Loop() {
                     bPrameterChange = true;
                 ImGui::End();
             }
+            {
+                ImGui::Begin("BenchMark");
+                ImGui::Text("Bench Time : %.2f sec", benchTime);
+                ImGui::Text("Total Frame : %d", totalFrame);
+                ImGui::Text("Mean FPS : %.3f fps/sec", (float)totalFrame/benchTime);
+                ImGui::Text("Total Render Time : %.2f ms", totalRenderTime/(float)totalFrame);
+                ImGui::End();
+            }
         }
-
+        
+        if (bBenchmark) {
+            float benchTimeElapsed = timeMng.getRealTime() - benchStart;
+            mainCam->target = glm::vec3(0.0, 0.0, 0.0);
+            mainCam->theta = 45.0f;
+            mainCam->phi = 360.0f * benchTimeElapsed / benchTime;
+            mainCam->UpdateRot();
+            mainCam->UpdateMat();
+            bBenchmark = !(benchTimeElapsed > benchTime);
+        }
 
         // Generate shadeow map
         sun->Begin();
@@ -222,7 +241,7 @@ void Engine::Loop() {
         renderer.postProcess();
         //std::cout << "STG 3\n";
         // GUI render on opengl screen
-        if (bDrawGUI) {
+        if (!bBenchmark && bDrawGUI) {
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
@@ -279,6 +298,15 @@ void engine_input_handler(GLFWwindow* window) {
     }
     else if (isWPressed && (now - lastPPress) <= 0.05) {
         lastPPress = now;
+    }
+
+    isWPressed = glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS;
+    if (isWPressed && (now - lastPPress) > 6.0f) {
+        bBenchmark = true;
+        lastPPress = now;
+        benchStart = timeMng.getRealTime();
+        totalFrame = 0;
+        totalRenderTime = 0.0;
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {

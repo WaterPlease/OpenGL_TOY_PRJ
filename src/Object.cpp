@@ -91,7 +91,7 @@ FireFliesObject::FireFliesObject() :BaseObject(ObjClass::FireFlies) {
 
 	glGenBuffers(1, &SSBO_FLY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO_FLY);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 32 * 32 * 5 * sizeof(float), flyInfo, GL_DYNAMIC_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, flyDensity * flyDensity * 5 * sizeof(float), flyInfo, GL_DYNAMIC_COPY);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, SSBO_FLY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -121,7 +121,7 @@ void FireFliesObject::draw() {
 	GLuint ssbo_binding_point_index = 3;
 	glShaderStorageBlockBinding(fliesUpdate->ID, block_index0, ssbo_binding_point_index);
 	if (bDrawFireflies)
-		glDispatchCompute(32, 32, 1);
+		glDispatchCompute(flyDensity, flyDensity, 1);
 
 	glMemoryBarrier(GL_ALL_BARRIER_BITS | GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -153,7 +153,7 @@ void FireFliesObject::draw() {
 
 	glPointSize(3.0f);
 	if (bDrawFireflies)
-		glDrawArraysInstanced(GL_POINTS, 0, 1, 32 * 32);
+		glDrawArraysInstanced(GL_POINTS, 0, 1, flyDensity * flyDensity);
 	glBindVertexArray(0);
 	glEnable(GL_CULL_FACE);
 }

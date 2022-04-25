@@ -3,9 +3,11 @@
 #define M_PI 3.1415926535897932384626433832795
 #define EPS 0.001
 
+#define DENSITY 32
+
 layout(local_size_x = 1, local_size_y=1, local_size_z=1) in;
 layout(std430, binding = 3) volatile buffer flyInfo {
-	float pos [32*32*5];
+	float pos [DENSITY*DENSITY*5];
 }flyinfo;
 
 uniform float t;
@@ -26,14 +28,14 @@ float getHeight(vec3 pos){
 }
 
 void main(){
-    int idx = int(gl_GlobalInvocationID.x*32+gl_GlobalInvocationID.y);
+    int idx = int(gl_GlobalInvocationID.x* DENSITY + gl_GlobalInvocationID.y);
 
     float rPhaseDiff = fract(sin(dot(gl_GlobalInvocationID.xy, vec2(12.9898, 78.233))) * 43758.5453);
     float freqRandom = rPhaseDiff;
     rPhaseDiff = fract(sin(dot(vec2(rPhaseDiff), vec2(12.9898, 78.233))) * 43758.5453);
 
     float phase = 2.0*M_PI*t*speed + rPhaseDiff;
-    vec2 xzPos = vec2(gl_GlobalInvocationID.x,gl_GlobalInvocationID.y)/32-vec2(0.5);
+    vec2 xzPos = vec2(gl_GlobalInvocationID.x,gl_GlobalInvocationID.y)/ DENSITY - vec2(0.5);
     xzPos = xzPos*landSize;
 
     flyinfo.pos[5*idx+0] = mix(sin(3.0*phase*freqRandom),cos(3.0*phase*freqRandom),rPhaseDiff)+xzPos.x;

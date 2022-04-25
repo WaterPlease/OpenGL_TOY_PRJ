@@ -53,4 +53,14 @@ extern float GRASS_SLOPE_CRITERION;
 extern float CAM_MOVE_SPEED;
 extern float CAM_ROT_SPEED;
 extern float TIME_SPEED;
+
+
+// BenchMark results
+
+extern bool bBenchmark;
+extern float benchStart;
+extern float benchTime;
+extern int totalFrame;
+extern float totalRenderTime;
+extern unsigned int queryBuffer;
 #endif

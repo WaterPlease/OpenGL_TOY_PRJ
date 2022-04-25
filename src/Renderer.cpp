@@ -9,7 +9,7 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
     // Initialize glfw
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window = glfwCreateWindow(1920,1080, title, glfwGetPrimaryMonitor(), NULL);
@@ -56,7 +56,7 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
     mainCam->zFar = 1000.0f;
     
     mainCam->target = glm::vec3(0.0f,5.0f,0.0f);
-    mainCam->rad = 10.0f;
+    mainCam->rad = 50.0f;
     mainCam->theta = 45.0f;
     mainCam->phi   = 45.0f;
     mainCam->UpdateRot();
@@ -343,6 +343,8 @@ inline void DEFFEREDPIPE::Begin() {
 }
 
 void DEFFEREDPIPE::End() {
+    glBeginQuery(GL_TIME_ELAPSED, queryBuffer);
+
     glBindFramebuffer(GL_FRAMEBUFFER, nextFBO);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -384,6 +386,16 @@ void DEFFEREDPIPE::End() {
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
+    GLuint64 timeElapsed;
+    GLint queryReady=0;
+    glEndQuery(GL_TIME_ELAPSED);
+    if(bBenchmark) {
+        glGetQueryObjectui64v(queryBuffer, GL_QUERY_RESULT, &timeElapsed);
+        timeElapsed /= 1000000;
+        totalRenderTime += (float)timeElapsed;
+        totalFrame++;
+    }
 }
 
 inline SSRPIPE::SSRPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFBO) :RenderPIPE(), nextFBO(nextPIPEFBO) {

@@ -33,7 +33,7 @@ uniform bool drawFireflies;
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
-
+#define NUM_POINT_LIGHT 1024
 
 
 
@@ -220,46 +220,24 @@ void main(){
     vec4 lightSpacePos = lightSpaceMat*(inverseViewMat*vec4(FragPos,1.0));
 
     /*
-    float Specular = 1.0-gNormalRough.a;
-    seed = length(FragPos);
-    lighting = Albedo * 0.1; // hard-coded ambient component
-    vec3 viewDir = normalize(-FragPos);
-    vec3 lightDir = normalize(sunDir);
-    vec3 halfWay = normalize(viewDir+lightDir);
-    vec3 diffuse = (max(dot(Normal, lightDir), 0.0) * Albedo * lightColor + lightColor * max(pow(dot(Normal,halfWay),40.0),0.0)*Specular) * (1.0-calcShadow(lightSpacePos,Normal,lightDir));
-    lighting += diffuse;
     */
     vec3 Normal = gNormalRough.rgb;
     vec3 globalFragPos = (inverseViewMat * vec4(FragPos,1.0)).xyz;
-    if(length(Normal)<EPS)
+    if(length(Normal)<EPS){
         if(AO<0.0)
             lighting += Albedo*lightColor;
         else
             lighting += Albedo;
-    else{
+    }else{
         Normal = normalize(Normal);
         lighting += pbr_sun_lighting(lightSpacePos,lightColor*sunStrength,normalize(sunDir),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
-        int i,j;
-        vec2 gridPos = (globalFragPos.xz/landSize+0.5)*32;
-        i = int(floor(gridPos.x));
-        j = int(floor(gridPos.y));
-        if(drawFireflies){
-            for(int s=-1;s<=1;s++){
-                for(int t=-1;t<=1;t++){
-                    int xPos = i+s;
-                    int yPos = j+t;
-                    /*if(xPos<0 || xPos>31 ||
-                    yPos<0 || yPos>31  ){
-                        continue;
-                    }*/
-                    int idx = (i+s)*32+(j+t);
-                    vec3 lPos = vec3(flyinfo.pos[5*idx+0],flyinfo.pos[5*idx+1],flyinfo.pos[5*idx+2]);
-                    float dist = distance(globalFragPos,lPos);
-                    if(dist<2.0){
-                        vec3 viewLPos = (view * vec4(lPos,1.0)).xyz;
-                        lighting += pbr_sun_point(dist,vec3(0.91,0.94,0.4)*flyinfo.pos[5*idx+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
-                    }
-                }
+
+        for(int i=0;i<NUM_POINT_LIGHT;i++){
+            vec3 lPos = vec3(flyinfo.pos[5*i+0],flyinfo.pos[5*i+1],flyinfo.pos[5*i+2]);
+            float dist = distance(globalFragPos,lPos);
+            if(dist<2.0){
+                vec3 viewLPos = (view * vec4(lPos,1.0)).xyz;
+                lighting += pbr_sun_point(dist,vec3(0.91,0.94,0.4)*flyinfo.pos[5*i+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
             }
         }
     }
