@@ -262,5 +262,8 @@
     <None Include="shader\water.vs">
       <Filter>리소스 파일\Shader</Filter>
     </None>
+    <None Include="shader\lightCulling.cs">
+      <Filter>리소스 파일\Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

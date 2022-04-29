@@ -335,6 +335,65 @@ inline DEFFEREDPIPE::DEFFEREDPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFB
     gBuffer_position = gPositionMetal;
     gBuffer_Normal = gNormalRough;
     gBuffer_Albedo = gAlbedoAO;
+
+
+    // frustums
+    float& zFar = mainCam->zFar;
+    float& zNear = mainCam->zNear;
+    const float halfH = zFar * tanf(0.5f * mainCam->fovy);
+    const float halfW = halfH * mainCam->aspect;
+    const glm::vec3 centerFarPlane = glm::vec3(0.0f, 0.0f, -1.0f) * zFar;
+    for (int i = 0; i <= 48; i++) {
+        auto planeNormal = glm::normalize(glm::cross(
+            centerFarPlane - (halfW - i/24.0f * halfW) * glm::vec3(1.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f)));
+        xPlanes[i].x = planeNormal.x;
+        xPlanes[i].y = planeNormal.y;
+        xPlanes[i].z = planeNormal.z;
+    }
+    for (int i = 0; i <= 30; i++) {
+        auto planeNormal = glm::normalize(glm::cross(
+            glm::vec3(1.0f, 0.0f, 0.0f),
+            centerFarPlane - (halfH - i / 15.0f * halfH) * glm::vec3(0.0f, 1.0f, 0.0f)
+        ));
+        yPlanes[i].x = planeNormal.x;
+        yPlanes[i].y = planeNormal.y;
+        yPlanes[i].z = planeNormal.z;
+    }
+    /*
+    float& zFar = mainCam->zFar;
+    float& zNear = mainCam->zNear;
+    const float halfH = zFar * tanf(0.5f * mainCam->fovy);
+    const float halfW = halfH * mainCam->aspect;
+    const glm::vec3 centerFarPlane = glm::vec3(0.0f, 0.0f, -1.0f) * zFar;
+    for (int i = 0; i <= 40; i++) {
+        auto planeNormal = glm::normalize(glm::cross(
+            centerFarPlane - (halfW - i*0.05f*halfW) * glm::vec3(1.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f)));
+        xPlanes[i].x = planeNormal.x;
+        xPlanes[i].y = planeNormal.y;
+        xPlanes[i].z = planeNormal.z;
+    }
+    for (int i = 0; i <= 36; i++) {
+        auto planeNormal = glm::normalize(glm::cross(
+            glm::vec3(1.0f, 0.0f, 0.0f),
+            centerFarPlane - (halfH - i /18.0f * halfH) * glm::vec3(0.0f, 1.0f, 0.0f)
+                        ));
+        yPlanes[i].x = planeNormal.x;
+        yPlanes[i].y = planeNormal.y;
+        yPlanes[i].z = planeNormal.z;
+    }
+    */
+    // Light index
+    glGenBuffers(1, &SSBO_lightIndex);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO_lightIndex);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(lightIndex), nullptr, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, SSBO_lightIndex);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    gl_SSBO_LightIndex = SSBO_lightIndex;
+
+    lightCullShader = new ComputeShader("C:\\Users\\kwonh\\Desktop\\study\\Graphics\\OpenGL_TOY_PRJ\\shader\\lightCulling.cs");
 }
 
 inline void DEFFEREDPIPE::Begin() {
@@ -347,6 +406,33 @@ void DEFFEREDPIPE::End() {
 
     glBindFramebuffer(GL_FRAMEBUFFER, nextFBO);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_SSBO_LightIndex);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint), &ZERO);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS | GL_SHADER_STORAGE_BARRIER_BIT);
+
+    lightCullShader->use();
+    lightCullShader->setMat4("view", mainCam->GetViewMat());
+    glUniform3fv(glGetUniformLocation(lightCullShader->ID, "xPlanes"),49,(const GLfloat*)xPlanes);
+    glUniform3fv(glGetUniformLocation(lightCullShader->ID, "yPlanes"),31,(const GLfloat*)yPlanes);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_SSBO_LightIndex);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gl_SSBO_LightIndex);
+    GLuint block_index0 = 
+        glGetProgramResourceIndex(lightCullShader->ID, GL_SHADER_STORAGE_BLOCK, "lightIndex");
+    GLuint ssbo_binding_point_index = 4;
+    glShaderStorageBlockBinding(lightCullShader->ID, block_index0, ssbo_binding_point_index);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_SSBO_FLY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gl_SSBO_FLY);
+    block_index0 = 
+        glGetProgramResourceIndex(lightCullShader->ID, GL_SHADER_STORAGE_BLOCK, "flyInfo");
+    ssbo_binding_point_index = 3;
+    glShaderStorageBlockBinding(lightCullShader->ID, block_index0, ssbo_binding_point_index);
+
+    glDispatchCompute(48, 30, 1);
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS | GL_SHADER_STORAGE_BARRIER_BIT);
 
     lightingShader->use();
     if (bPrameterChange) {
@@ -378,9 +464,16 @@ void DEFFEREDPIPE::End() {
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_SSBO_FLY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gl_SSBO_FLY);
-    GLuint block_index0 = 0;
-    block_index0 = glGetProgramResourceIndex(lightingShader->ID, GL_SHADER_STORAGE_BLOCK, "flyInfo");
-    GLuint ssbo_binding_point_index = 3;
+    block_index0 = 
+        glGetProgramResourceIndex(lightingShader->ID, GL_SHADER_STORAGE_BLOCK, "flyInfo");
+    ssbo_binding_point_index = 3;
+    glShaderStorageBlockBinding(lightingShader->ID, block_index0, ssbo_binding_point_index);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_SSBO_LightIndex);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, gl_SSBO_LightIndex);
+    block_index0 =
+        glGetProgramResourceIndex(lightingShader->ID, GL_SHADER_STORAGE_BLOCK, "lightIndex");
+    ssbo_binding_point_index = 4;
     glShaderStorageBlockBinding(lightingShader->ID, block_index0, ssbo_binding_point_index);
 
     glBindVertexArray(quadVAO);

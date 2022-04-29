@@ -51,14 +51,30 @@ public:
 
 	void End();
 };
+
+struct lightIndex{
+	GLuint indexLstSize;
+	GLuint indexLst[48 * 30 * 1024];
+	glm::uvec2 gridCell[48 * 30];   // offset, size
+};
+struct Plane {
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+};
 class DEFFEREDPIPE :public RenderPIPE {
 	GLuint rbo;
 	GLuint nextFBO;
 	GLuint quadVAO;
 	GLuint quadVBO;
 	Shader* lightingShader;
+	ComputeShader* lightCullShader;
 public:
 	GLuint gPositionMetal,gNormalRough,gAlbedoAO;//alpha value of albedo buffer is specular value.
+	GLuint SSBO_lightIndex;
+	Plane xPlanes[48+1]; // 40 pixels
+	Plane yPlanes[30+1]; // 36 pixels
+	const GLuint ZERO=0;
 	DEFFEREDPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFBO = 0);
 
 	void Begin();

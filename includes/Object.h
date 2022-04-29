@@ -10,6 +10,8 @@
 #include "util.h"
 #include "PathMng.h"
 
+#define FLYDENSITY 32
+
 enum ObjClass {
 	Base,
 	Simple,
@@ -81,13 +83,13 @@ public:
 };
 
 struct FlyInfo {
-	GLfloat pos[32*32*5];
+	GLfloat pos[FLYDENSITY * FLYDENSITY *5];
 };
 
 class FireFliesObject : public BaseObject {
 	ComputeShader* fliesUpdate;
 	Shader* flyShader;
-	const int flyDensity=32;
+	const int flyDensity= FLYDENSITY;
 public:
 	GLuint VAO, VBO, SSBO_FLY;
 	FlyInfo* flyInfo;

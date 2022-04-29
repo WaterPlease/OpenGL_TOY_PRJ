@@ -44,7 +44,7 @@ void main(){
 
     rPhaseDiff = fract(sin(dot(vec2(rPhaseDiff), vec2(12.9898, 78.233))) * 43758.5453);
     flyinfo.pos[5*idx+3] = sin(2.0*M_PI*t*freqRandom+rPhaseDiff)*0.25+0.75;
-    flyinfo.pos[5*idx+4] = 0;
+    flyinfo.pos[5*idx+4] = 2.0;
 
     
     flyinfo.pos[5*idx+1] += max(getHeight(vec3(flyinfo.pos[5*idx+0],flyinfo.pos[5*idx+1],flyinfo.pos[5*idx+2])),waterLevel);

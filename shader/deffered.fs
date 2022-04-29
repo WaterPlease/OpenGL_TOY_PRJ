@@ -1,8 +1,18 @@
 #version 430 core
 
+#define FLYDENSITY 32
+
 layout(std430, binding = 3) volatile buffer flyInfo {
-	float pos [32*32*5];
+	float pos [FLYDENSITY*FLYDENSITY*5];
 }flyinfo;
+
+layout(std430, binding = 3) volatile buffer lightIndex
+{
+	uint indexLstSize;
+	uint indexLst[48*30*1024];
+	uvec2 gridCell[48*30];   // offset, size
+}
+lightindex;
 
 out vec4 FragColor;
 
@@ -33,7 +43,7 @@ uniform bool drawFireflies;
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
-#define NUM_POINT_LIGHT 1024
+#define NUM_POINT_LIGHT (FLYDENSITY*FLYDENSITY)
 
 
 
@@ -200,6 +210,12 @@ vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo
 }
 
 
+// TILED RENDERING
+uint getTileID(){
+    return uint(gl_FragCoord.y)/36*48 + uint(gl_FragCoord.x)/40;
+    //return uint(floor((gl_FragCoord.y/1080)*30)) * 48 + uint(floor((gl_FragCoord.x/1980)*48));
+}
+
 // MAIN
 void main(){
     seed = (gl_FragCoord.x/1980)*(gl_FragCoord.y/1080);
@@ -231,16 +247,21 @@ void main(){
     }else{
         Normal = normalize(Normal);
         lighting += pbr_sun_lighting(lightSpacePos,lightColor*sunStrength,normalize(sunDir),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
-
-        for(int i=0;i<NUM_POINT_LIGHT;i++){
-            vec3 lPos = vec3(flyinfo.pos[5*i+0],flyinfo.pos[5*i+1],flyinfo.pos[5*i+2]);
+        uvec2 gridCell = lightindex.gridCell[getTileID()];
+        for(int i=0;i<gridCell.y;i++){
+            uint indexLstIdx = gridCell.x + i;
+            uint lightID = lightindex.indexLst[indexLstIdx];
+            vec3 lPos = vec3(flyinfo.pos[5*lightID+0],flyinfo.pos[5*lightID+1],flyinfo.pos[5*lightID+2]);
             float dist = distance(globalFragPos,lPos);
             if(dist<2.0){
                 vec3 viewLPos = (view * vec4(lPos,1.0)).xyz;
-                lighting += pbr_sun_point(dist,vec3(0.91,0.94,0.4)*flyinfo.pos[5*i+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
+                lighting += pbr_sun_point(dist,vec3(0.91,0.94,0.4)*flyinfo.pos[5*lightID+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
             }
         }
     }
     
-    FragColor = vec4(lighting, 1.0);
+    FragColor = vec4(
+                    lighting,
+                    //+min(1.0,float(lightindex.gridCell[getTileID()].y)/10.0)*vec3(1.0,0.0,0.0),
+                    1.0);
 }
