@@ -3,7 +3,7 @@
 #define FLYDENSITY 32
 
 // FLYDENSITY * FLYDENSITY / THREADNUM MUST BE INTEGER
-#define THREADNUM 4
+#define THREADNUM 8
 
 layout(local_size_x = THREADNUM, local_size_y = 1, local_size_z = 1) in;
 
