@@ -172,8 +172,8 @@ vec3 pbr_sun_lighting(vec4 lightSpacePos,vec3 lightColor,vec3 L,vec3 N, vec3 V, 
 vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo, float metalic, float roughness,float ao){
     vec3 Lo;
     vec3 H = normalize(N+V);
-    //vec3 radiance =  lightColor / (1.0+dist*dist);
-    vec3 radiance =  lightColor / ((dist*5.0)*(dist*5.0)+1) * pow(max(1-dist,0.0),42);
+    vec3 radiance =  lightColor / (1.0+dist*dist);
+    //vec3 radiance =  lightColor / ((dist*5.0)*(dist*5.0)+1) * pow(max(1-dist,0.0),42);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0,albedo,metalic);
@@ -196,7 +196,7 @@ vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo
     float NdotL = max(dot(N,L),0.0);
 
     Lo = (kD * albedo / M_PI + specular ) * radiance * NdotL;
-    return Lo + vec3(0.03)*albedo*ao;
+    return Lo;// + vec3(0.03)*albedo*ao;
 }
 
 
@@ -237,7 +237,9 @@ void main(){
             float dist = distance(globalFragPos,lPos);
             if(dist<2.0){
                 vec3 viewLPos = (view * vec4(lPos,1.0)).xyz;
-                lighting += pbr_sun_point(dist,vec3(0.91,0.94,0.4)*flyinfo.pos[5*i+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
+                vec3 color = vec3(0.2);
+                color[uint(flyinfo.pos[5*i+4])] = 1.2;
+                lighting += pbr_sun_point(dist,color*flyinfo.pos[5*i+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
             }
         }
     }
