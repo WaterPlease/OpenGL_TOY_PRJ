@@ -1,6 +1,11 @@
 # version 430 core
 
 #define FLYDENSITY 256
+#define MAX_LIGHTS_TILE 1024
+#define NUM_X_AXIS_TILE 24
+#define NUM_Y_AXIS_TILE 15
+#define NUM_Z_AXIS_TILE 16
+#define EPS 0.001
 
 // FLYDENSITY * FLYDENSITY / THREADNUM MUST BE INTEGER
 #define THREADNUM 32
@@ -16,17 +21,18 @@ flyinfo;
 layout(std430, binding = 3) volatile buffer lightIndex
 {
 	uint indexLstSize;
-	uint indexLst[48*30*8192];
-	uvec2 gridCell[48*30];   // offset, size
+	uint indexLst[NUM_X_AXIS_TILE*NUM_Y_AXIS_TILE*NUM_Z_AXIS_TILE*MAX_LIGHTS_TILE];
+	uvec2 gridCell[NUM_X_AXIS_TILE*NUM_Y_AXIS_TILE*NUM_Z_AXIS_TILE];   // offset, size
 }
 lightindex;
 
-uniform vec3 xPlanes[49];
-uniform vec3 yPlanes[31];
+uniform vec3 xPlanes[NUM_X_AXIS_TILE+1];
+uniform vec3 yPlanes[NUM_Y_AXIS_TILE+1];
 uniform mat4 view;
+uniform float zFar;
 
 shared uint intersectionCnt;
-shared uint intersectionLst[8192];
+shared uint intersectionLst[MAX_LIGHTS_TILE];
 
 bool InsideOrIntersectPlane(vec3 normal, vec3 center, float radius)
 {
@@ -42,12 +48,17 @@ bool frustumSphereIntersect(uint lightIdx)
 	planes[2] = yPlanes[gl_WorkGroupID.y];
 	planes[3] = -yPlanes[gl_WorkGroupID.y + 1];
 
-	int s=0;
 	bool result = true;
-	for(int i = 0; i < 4; i++)
+
+	vec3 lightPos = vec3(flyinfo.pos[lightIdx * 5 + 0], flyinfo.pos[lightIdx * 5 + 1], flyinfo.pos[lightIdx * 5 + 2]);
+	lightPos = (view * vec4(lightPos, 1.0)).xyz;
+	uint zTileID1 = uint(floor(-(lightPos.z-2.0) / zFar * NUM_Z_AXIS_TILE));
+	uint zTileID2 = uint(floor(-(lightPos.z+2.0) / zFar * NUM_Z_AXIS_TILE));
+	result = result && (gl_WorkGroupID.z == zTileID1 || gl_WorkGroupID.z == zTileID2);
+	//result = result && (lightPos.z < (-gl_WorkGroupID.z * zFar / NUM_Z_AXIS_TILE + 2.0));
+	//result = result && (lightPos.z > (-(gl_WorkGroupID.z+1) * zFar / NUM_Z_AXIS_TILE - 2.0));
+	for (int i = 0; i < 4; i++)
     {
-		vec3 lightPos = vec3(flyinfo.pos[lightIdx * 5 + 0], flyinfo.pos[lightIdx * 5 + 1], flyinfo.pos[lightIdx * 5 + 2]);
-		lightPos = (view * vec4(lightPos, 1.0)).xyz;
 		result = result && InsideOrIntersectPlane(planes[i], lightPos, 2.0);
 	}
 
@@ -58,7 +69,7 @@ void main()
 {
 	uint lightCnt = FLYDENSITY * FLYDENSITY;
 	uint batchCnt = lightCnt / THREADNUM;
-	uint tileIndex = gl_WorkGroupID.z * 48*30 + gl_WorkGroupID.y * 48 + gl_WorkGroupID.x;
+	uint tileIndex = gl_WorkGroupID.z * NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE + gl_WorkGroupID.y * NUM_X_AXIS_TILE + gl_WorkGroupID.x;
 
 	//if (gl_WorkGroupID.x + gl_WorkGroupID.y + gl_WorkGroupID.z
 	//	== 0)

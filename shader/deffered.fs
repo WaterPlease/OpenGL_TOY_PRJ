@@ -1,6 +1,10 @@
 #version 430 core
 
 #define FLYDENSITY 256
+#define MAX_LIGHTS_TILE 1024
+#define NUM_X_AXIS_TILE 24
+#define NUM_Y_AXIS_TILE 15
+#define NUM_Z_AXIS_TILE 16
 
 layout(std430, binding = 3) volatile buffer flyInfo {
 	float pos [FLYDENSITY*FLYDENSITY*5];
@@ -9,8 +13,8 @@ layout(std430, binding = 3) volatile buffer flyInfo {
 layout(std430, binding = 3) volatile buffer lightIndex
 {
 	uint indexLstSize;
-	uint indexLst[48*30*8192];
-	uvec2 gridCell[48*30];   // offset, size
+	uint indexLst[NUM_X_AXIS_TILE*NUM_Y_AXIS_TILE*NUM_Z_AXIS_TILE*MAX_LIGHTS_TILE];
+	uvec2 gridCell[NUM_X_AXIS_TILE*NUM_Y_AXIS_TILE*NUM_Z_AXIS_TILE];   // offset, size
 }
 lightindex;
 
@@ -32,7 +36,7 @@ uniform mat4 view;
 uniform mat4 lightSpaceMat;
 uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
-uniform float landSize;
+uniform float zFar;
 uniform bool drawFireflies;
 
 
@@ -211,9 +215,9 @@ vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo
 
 
 // TILED RENDERING
-uint getTileID(){
+uint getTileID(vec3 viewPos){
     //return uint(gl_FragCoord.y)/36*48 + uint(gl_FragCoord.x)/40;
-    return uint(floor(gl_FragCoord.y/36.0)) * 48 + uint(floor(gl_FragCoord.x/40.0));
+    return uint(floor(-(viewPos.z) / zFar * NUM_Z_AXIS_TILE)) * NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE + uint(floor(gl_FragCoord.y/1080.0*NUM_Y_AXIS_TILE)) * NUM_X_AXIS_TILE + uint(floor(gl_FragCoord.x/1920.0*NUM_X_AXIS_TILE));
 }
 
 // MAIN
@@ -247,7 +251,7 @@ void main(){
     }else{
         Normal = normalize(Normal);
         lighting += pbr_sun_lighting(lightSpacePos,lightColor*sunStrength,normalize(sunDir),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
-        uvec2 gridCell = lightindex.gridCell[getTileID()];
+        uvec2 gridCell = lightindex.gridCell[getTileID(FragPos)];
         for(int i=0;i<gridCell.y;i++){
             uint indexLstIdx = gridCell.x + i;
             uint lightID = lightindex.indexLst[indexLstIdx];
@@ -263,7 +267,7 @@ void main(){
     }
     
     FragColor = vec4(
-                    lighting/(1.0+lighting),
+                    lighting,
                     //+min(1.0,float(lightindex.gridCell[getTileID()].y)/10.0)*vec3(1.0,0.0,0.0),
                     1.0);
 }
