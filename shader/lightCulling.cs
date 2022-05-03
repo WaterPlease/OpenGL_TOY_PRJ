@@ -1,9 +1,9 @@
 # version 430 core
 
-#define FLYDENSITY 32
+#define FLYDENSITY 256
 
 // FLYDENSITY * FLYDENSITY / THREADNUM MUST BE INTEGER
-#define THREADNUM 8
+#define THREADNUM 32
 
 layout(local_size_x = THREADNUM, local_size_y = 1, local_size_z = 1) in;
 
@@ -16,7 +16,7 @@ flyinfo;
 layout(std430, binding = 3) volatile buffer lightIndex
 {
 	uint indexLstSize;
-	uint indexLst[48*30*1024];
+	uint indexLst[48*30*8192];
 	uvec2 gridCell[48*30];   // offset, size
 }
 lightindex;
@@ -26,7 +26,7 @@ uniform vec3 yPlanes[31];
 uniform mat4 view;
 
 shared uint intersectionCnt;
-shared uint intersectionLst[1024];
+shared uint intersectionLst[8192];
 
 bool InsideOrIntersectPlane(vec3 normal, vec3 center, float radius)
 {

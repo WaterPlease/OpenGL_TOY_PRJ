@@ -2,9 +2,9 @@
 layout (location = 0) in vec3 aPos;
 
 #define EPS 0.001
-
+#define DENSITY 256
 layout(std430, binding = 3) buffer flyInfo{
-	float pos[32*32*5];
+	float pos[DENSITY*DENSITY*5];
 }flyinfo;
 
 out VS_OUT{

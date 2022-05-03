@@ -10,7 +10,7 @@
 #include "util.h"
 #include "PathMng.h"
 
-#define FLYDENSITY 32
+#define FLYDENSITY 256
 
 enum ObjClass {
 	Base,

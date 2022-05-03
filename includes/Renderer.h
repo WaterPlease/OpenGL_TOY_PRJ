@@ -54,7 +54,7 @@ public:
 
 struct lightIndex{
 	GLuint indexLstSize;
-	GLuint indexLst[48 * 30 * 1024];
+	GLuint indexLst[48 * 30 * 8192];
 	glm::uvec2 gridCell[48 * 30];   // offset, size
 };
 struct Plane {

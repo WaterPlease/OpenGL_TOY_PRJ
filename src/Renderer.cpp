@@ -53,7 +53,7 @@ Renderer::Renderer(const char* title, int width, int height):screenRes(width,hei
     mainCam->aspect = (float)(this->screenRes.x) / (float)(this->screenRes.y);
     mainCam->fovy = 45.0f;// glm::radians(71.0f);
     mainCam->zNear = 0.1f;
-    mainCam->zFar = 1000.0f;
+    mainCam->zFar = LANDSIZE*1.5f;
     
     mainCam->target = glm::vec3(0.0f,5.0f,0.0f);
     mainCam->rad = 50.0f;
@@ -479,6 +479,8 @@ void DEFFEREDPIPE::End() {
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS | GL_FRAMEBUFFER_BARRIER_BIT);
 
     GLuint64 timeElapsed;
     GLint queryReady=0;

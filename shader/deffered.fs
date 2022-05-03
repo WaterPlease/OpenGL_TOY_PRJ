@@ -1,6 +1,6 @@
 #version 430 core
 
-#define FLYDENSITY 32
+#define FLYDENSITY 256
 
 layout(std430, binding = 3) volatile buffer flyInfo {
 	float pos [FLYDENSITY*FLYDENSITY*5];
@@ -9,7 +9,7 @@ layout(std430, binding = 3) volatile buffer flyInfo {
 layout(std430, binding = 3) volatile buffer lightIndex
 {
 	uint indexLstSize;
-	uint indexLst[48*30*1024];
+	uint indexLst[48*30*8192];
 	uvec2 gridCell[48*30];   // offset, size
 }
 lightindex;
@@ -212,8 +212,8 @@ vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo
 
 // TILED RENDERING
 uint getTileID(){
-    return uint(gl_FragCoord.y)/36*48 + uint(gl_FragCoord.x)/40;
-    //return uint(floor((gl_FragCoord.y/1080)*30)) * 48 + uint(floor((gl_FragCoord.x/1980)*48));
+    //return uint(gl_FragCoord.y)/36*48 + uint(gl_FragCoord.x)/40;
+    return uint(floor(gl_FragCoord.y/36.0)) * 48 + uint(floor(gl_FragCoord.x/40.0));
 }
 
 // MAIN
@@ -263,7 +263,7 @@ void main(){
     }
     
     FragColor = vec4(
-                    lighting,
+                    lighting/(1.0+lighting),
                     //+min(1.0,float(lightindex.gridCell[getTileID()].y)/10.0)*vec3(1.0,0.0,0.0),
                     1.0);
 }
