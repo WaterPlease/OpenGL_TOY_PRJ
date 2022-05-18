@@ -419,6 +419,7 @@ void DEFFEREDPIPE::End() {
         lightingShader->setVec3("lightColor", sun->color);
         lightingShader->setFloat("sunStrength", sun->lightStrength);
         lightingShader->setFloat("zFar", mainCam->zFar);
+        lightingShader->setBool("bClusterDraw", bClusterDraw);
     }
     lightingShader->setVec3("sunDir", glm::vec3(mainCam->GetViewMat() * glm::vec4(sun->lightDir, 0.0)));
     lightingShader->setVec3("viewPos", mainCam->pos);

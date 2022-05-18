@@ -38,6 +38,7 @@ uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
 uniform float zFar;
 uniform bool drawFireflies;
+uniform bool bClusterDraw;
 
 
 #define EPS 0.001
@@ -265,9 +266,21 @@ void main(){
             }
         }
     }
-    
-    FragColor = vec4(
-                    lighting,
-                    //+min(1.0,float(lightindex.gridCell[getTileID()].y)/10.0)*vec3(1.0,0.0,0.0),
-                    1.0);
+    //uint maxLight = 0;
+    //int tID = int(getTileID(vec3(0.0)))-NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE;
+    //for(uint i=0; i<16;i++){
+    //    tID += NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE;
+    //    maxLight = max(maxLight,lightindex.gridCell[tID].y);
+    //}
+    if(bClusterDraw){
+        FragColor = vec4(
+                        //min(1.0,float(maxLight)/1000.0)*vec3(1.0,1.0,1.0),
+                        min(1.0,float(lightindex.gridCell[getTileID(FragPos)].y)/1000.0)*vec3(1.0),
+                        1.0);
+    }else{
+        FragColor = vec4(
+                        lighting,
+                        //+min(1.0,float(lightindex.gridCell[getTileID(FragPos)].y)/10.0)*vec3(1.0,0.0,0.0),
+                        1.0);
+    }
 }

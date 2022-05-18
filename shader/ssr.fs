@@ -148,6 +148,8 @@ void main(){
 	vec4 normal = vec4(texture(image_normal, TexCoords).xyz, 0.0);
 
 	vec3 color = texture(image_color, TexCoords).rgb;
+	FragColor = vec4(color,1.0);
+	return;
 
 	if(posMask.w>EPS){
 		vec3 reflectionDirection = normalize(reflect(normalize(posMask.xyz), normalize(normal.xyz)));

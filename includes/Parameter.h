@@ -63,4 +63,6 @@ extern float benchTime;
 extern int totalFrame;
 extern float totalRenderTime;
 extern unsigned int queryBuffer;
+
+extern bool bClusterDraw;
 #endif

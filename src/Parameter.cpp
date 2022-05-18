@@ -55,3 +55,5 @@ float benchTime = 5.0f;
 int totalFrame = 1.0;
 float totalRenderTime = -1.0;
 unsigned int queryBuffer;
+
+bool bClusterDraw = false;
