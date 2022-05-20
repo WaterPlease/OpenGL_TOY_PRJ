@@ -51,7 +51,7 @@ float SSR_THICKNESS = 1.0f;
 
 bool bBenchmark = false;
 float benchStart;
-float benchTime = 5.0f;
+float benchTime = 10.0f;
 int totalFrame = 1.0;
 float totalRenderTime = -1.0;
 unsigned int queryBuffer;

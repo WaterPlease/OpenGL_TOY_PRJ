@@ -392,8 +392,7 @@ void DEFFEREDPIPE::End() {
     glEndQuery(GL_TIME_ELAPSED);
     if(bBenchmark) {
         glGetQueryObjectui64v(queryBuffer, GL_QUERY_RESULT, &timeElapsed);
-        timeElapsed /= 1000000;
-        totalRenderTime += (float)timeElapsed;
+        totalRenderTime += (float)((long double)timeElapsed / (long double)1000000.0);
         totalFrame++;
     }
 }

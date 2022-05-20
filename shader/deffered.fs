@@ -1,7 +1,9 @@
 #version 430 core
 
+#define FLYDENSITY 128
+
 layout(std430, binding = 3) volatile buffer flyInfo {
-	float pos [32*32*5];
+	float pos [FLYDENSITY*FLYDENSITY*5];
 }flyinfo;
 
 out vec4 FragColor;
@@ -33,7 +35,7 @@ uniform bool drawFireflies;
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
-#define NUM_POINT_LIGHT 1024
+#define NUM_POINT_LIGHT FLYDENSITY*FLYDENSITY
 
 
 
