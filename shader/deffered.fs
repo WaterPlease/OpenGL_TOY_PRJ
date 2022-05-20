@@ -275,7 +275,7 @@ void main(){
     if(bClusterDraw){
         FragColor = vec4(
                         //min(1.0,float(maxLight)/1000.0)*vec3(1.0,1.0,1.0),
-                        min(1.0,float(lightindex.gridCell[getTileID(FragPos)].y)/1000.0)*vec3(1.0),
+                        min(1.0,float(lightindex.gridCell[getTileID(FragPos)].y)/2048.0)*vec3(1.0),
                         1.0);
     }else{
         FragColor = vec4(
