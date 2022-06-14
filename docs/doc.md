@@ -8,9 +8,13 @@
 
 이후에도 지속적으로 공부하면서 다양한 기능을 추가할 예정입니다.
 
+
+
+Keyword : clustered deferred rendering, SSR, Shadow map, PCF, Bloom effect, PBR, Normal mapping, tessellation
+
 #### 주요 기능
 
-- Deffered rendering
+- Deffered rendering with cluster shading
 
 ​			Composition of gBuffer
 
@@ -19,6 +23,14 @@
 | PositionMetal | Position X | Position Y | Position Z | Metal |
 | NormalRough   | Normal X   | Normal Y   | Normal Z   | Rough |
 | AlbedoSpec    | Albedo R   | Albedo G   | Albedo B   | AO    |
+
+​		Cluster shading
+
+<img src="C:\Users\kwonh\Videos\Base Profile\Base Profile Screenshot 2022.06.14 - 15.32.56.62.png" alt="Base Profile Screenshot 2022.06.14 - 15.32.56.62" style="width:50%;" /><img src="C:\Users\kwonh\Videos\Base Profile\Base Profile Screenshot 2022.06.14 - 15.33.06.26.png" alt="Base Profile Screenshot 2022.06.14 - 15.33.06.26" style="width:50%;" />
+
+
+
+성능 : light culling & lighting in 4.13ms
 
 - Screen space reflection
 
@@ -50,6 +62,9 @@
 - tessellation
 
 - LOD
+  - terrain tessellation
+
+  - grass
 
 - view cone culling
 
