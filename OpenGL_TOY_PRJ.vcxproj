@@ -82,6 +82,7 @@
     <None Include="shader\grass.fs" />
     <None Include="shader\grass.vs" />
     <None Include="shader\hdrShader.fs" />
+    <None Include="shader\lightCulling.cs" />
     <None Include="shader\postProcess.vs" />
     <None Include="shader\skybox.fs" />
     <None Include="shader\skybox.vs" />

@@ -49,4 +49,5 @@ extern GLuint gBuffer_Normal;
 
 extern GLuint gl_SSBO_FLY;
 extern GLuint gl_texture_heightmap;
+extern GLuint gl_SSBO_LightIndex;
 #endif

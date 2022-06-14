@@ -13,6 +13,11 @@
 #include "Parameter.h"
 #include "GUI.h"
 
+#define MAX_LIGHTS_TILE 1024
+#define NUM_X_AXIS_TILE 24
+#define NUM_Y_AXIS_TILE 15
+#define NUM_Z_AXIS_TILE 16
+
 class RenderPIPE {
 public:
 	GLuint fbo;
@@ -51,14 +56,30 @@ public:
 
 	void End();
 };
+
+struct lightIndex{
+	GLuint indexLstSize;
+	GLuint indexLst[NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE * NUM_Z_AXIS_TILE * MAX_LIGHTS_TILE];
+	glm::uvec2 gridCell[NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE * NUM_Z_AXIS_TILE];   // offset, size
+};
+struct Plane {
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+};
 class DEFFEREDPIPE :public RenderPIPE {
 	GLuint rbo;
 	GLuint nextFBO;
 	GLuint quadVAO;
 	GLuint quadVBO;
 	Shader* lightingShader;
+	ComputeShader* lightCullShader;
 public:
 	GLuint gPositionMetal,gNormalRough,gAlbedoAO;//alpha value of albedo buffer is specular value.
+	GLuint SSBO_lightIndex;
+	Plane xPlanes[NUM_X_AXIS_TILE + 1]; // 1920/NUM_X_AXIS_TILE pixels
+	Plane yPlanes[NUM_Y_AXIS_TILE + 1]; // 1080/NUM_Y_AXIS_TILE pixels
+	const GLuint ZERO=0;
 	DEFFEREDPIPE(const glm::uvec2& screenRes, GLuint nextPIPEFBO = 0);
 
 	void Begin();
