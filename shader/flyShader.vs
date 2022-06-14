@@ -26,8 +26,13 @@ void main()
     //vPos.y += max(getHeight(vPos),waterLevel);
     vPos += aPos.xyz;
     vs_out.FragPos = (view * vec4(vPos,1.0)).xyz;
-    vec3 color = vec3(0.2);
-    color[uint(flyinfo.pos[5*gl_InstanceID+4])] = 1.2;
+
+    //vec3 color = vec3(0.2);
+    //color[uint(flyinfo.pos[5*gl_InstanceID+4])] = 14.0;
+    vec3 color = vec3(0.0);
+    color[uint(flyinfo.pos[5*gl_InstanceID+4])] = 1.0;
+    color = color * dot(vec3(4.8,1.4,13.9),color);
+
     vs_out.Color = (color)*flyinfo.pos[5*gl_InstanceID+3];//(vec3(0.91,0.94,0.4))*flyinfo.pos[5*gl_InstanceID+3];
     gl_Position = projection * vec4(vs_out.FragPos,1.0);
 }

@@ -91,7 +91,7 @@ class Sun{
 	double time;
 	glm::mat4 transMat;
 public:
-	float lightStrength = 1.50f;
+	float lightStrength = 1.0f;
 	glm::vec3 lightDir;
 	glm::vec3 color;
 	GLuint depthMap;

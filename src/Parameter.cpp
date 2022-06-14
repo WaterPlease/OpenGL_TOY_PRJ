@@ -18,18 +18,18 @@ float LANDSIZE = 100.0f;
 float WATER_SIZE = 8.0f;
 float WATER_TIME_FACTOR = 0.1;
 float WATER_LEVEL = 2.0f;
-float WATER_UV_FACTOR = 80.0f;
+float WATER_UV_FACTOR = 32.0f;
 float LAND_ROCK_UV_FACTOR = 100.0;
 float LAND_GRASS_UV_FACTOR = 100.0;
 float LAND_HEIGHT = 15.0f;
-float WATER_WAVE_LENGTH = 20.0f;
-float WATER_WAVE_STEEPENSS = 0.5f;
+float WATER_WAVE_LENGTH = 2.833f;
+float WATER_WAVE_STEEPENSS = 0.147f;
 float WATER_TRANSPARENCY = 0.3;
 float GRASS_WAVE_LENGTH = 10.5f;
-float GRASS_WAVE_STEEPNESS = 0.02f;
+float GRASS_WAVE_STEEPNESS = 0.141f;
 float GRASS_DENSITY = 1.0;
 float GRASS_SIZE = 1.0f;
-float GRASS_SLOPE_CRITERION = 0.941f;
+float GRASS_SLOPE_CRITERION = 0.7f;
 
 float CAM_MOVE_SPEED = 10;
 float CAM_ROT_SPEED = 0.25f;
@@ -42,10 +42,10 @@ bool bDrawFireflies = true;
 
 unsigned int GL_TEXTURE_SKYBOX;
 
-float SSR_DISTANCE = 30.0f;
-float SSR_RESOLUTION = 0.5f;
-int   SSR_LIN_STEPS = 75;
-int   SSR_BIN_STEPS = 5;
+float SSR_DISTANCE = 200.0f;
+float SSR_RESOLUTION = 1.0f;
+int   SSR_LIN_STEPS = 200;
+int   SSR_BIN_STEPS = 10;
 float SSR_THICKNESS = 1.0f;
 
 

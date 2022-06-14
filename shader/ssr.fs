@@ -133,13 +133,16 @@ vec4 Raycast(vec3 rayOrigin, vec3 rayDir,sampler2D tex_position){
 			search0 = temp;
 		}
 	}
-
+	float sideCut = 0.1;
+	float k = 1.0/(0.5-abs(sideCut-0.5));
 	hit1 = (searchPosUV.x < 0.0 || searchPosUV.x > 1.0||
 			searchPosUV.y < 0.0 || searchPosUV.y > 1.0)?
 			-1:hit1;
+	float sideFade = k*min(0.5-abs(searchPosUV.x-0.5),0.5-abs(searchPosUV.y-0.5));
 	return vec4(searchPosUV,
 				(hit1<0)? -1.0:min(search1,iter_dist),
-				dDepth/thickness);
+				smoothstep(0.0,1.0,sideFade));
+				//min(1-dDepth/thickness,smoothstep(0.0,1.0,sideFade)));
 }
 
 
@@ -149,13 +152,11 @@ void main(){
 
 	vec3 color = texture(image_color, TexCoords).rgb;
 	FragColor = vec4(color,1.0);
-	return;
-
 	if(posMask.w>EPS){
 		vec3 reflectionDirection = normalize(reflect(normalize(posMask.xyz), normalize(normal.xyz)));
         if(dot(reflectionDirection,posMask.xyz)>0 && length(posMask.xyz) < LOD1){
             vec4 res = Raycast(posMask.xyz,reflectionDirection,image_position);
-			color += (res.z < 0)? vec3(0.0):texture(image_color,res.xy).rgb;
+			color += (res.z < 0)? vec3(0.0):texture(image_color,res.xy).rgb * res.z;
 			//FragColor = (res.z < 0)? FragColor:mix(texture(image_color,res.xy)*FragColor/dot(vec3(0.3,0.59,0.11),FragColor),FragColor,clamp(res.z*res.w,0.0,1.0)*(1-posMask.w));
 		}
 	}
