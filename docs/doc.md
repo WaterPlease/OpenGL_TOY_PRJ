@@ -26,7 +26,7 @@ Keyword : clustered deferred rendering, SSR, Shadow map, PCF, Bloom effect, PBR,
 
 ​		Cluster shading
 
-<img src="C:\Users\kwonh\Videos\Base Profile\Base Profile Screenshot 2022.06.14 - 15.32.56.62.png" alt="Base Profile Screenshot 2022.06.14 - 15.32.56.62" style="width:50%;" /><img src="C:\Users\kwonh\Videos\Base Profile\Base Profile Screenshot 2022.06.14 - 15.33.06.26.png" alt="Base Profile Screenshot 2022.06.14 - 15.33.06.26" style="width:50%;" />
+<img src="./Imgs/cluster_render.png" alt="Base Profile Screenshot 2022.06.14 - 15.32.56.62" style="width:50%;" /><img src="./Imgs/cluster_heatmap.png" alt="Base Profile Screenshot 2022.06.14 - 15.33.06.26" style="width:50%;" />
 
 
 
