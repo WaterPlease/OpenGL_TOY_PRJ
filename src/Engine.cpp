@@ -80,7 +80,8 @@ void Engine::Loop() {
                 }
                 if (ImGui::SliderFloat("shadowBlur jit", &SHADOW_BLUR_JITTER, 0.0f, 5.0f, "%.3f", 1.0f) ||
                     ImGui::SliderFloat("shadowBlur area", &SHADOW_BLUR_AREA, 0.1f, 10.0f, "%.3f", 1.0f) ||
-                    ImGui::SliderFloat("gamma", &GAMMA, 0.0f, 3.0f, "%.3f", 1.0f)) {
+                    ImGui::SliderFloat("gamma", &GAMMA, 0.0f, 3.0f, "%.3f", 1.0f)                       ||
+                    ImGui::Checkbox("Cluster draw",&bClusterDraw)) {
                     bPrameterChange = true;
                 }
                 ImGui::Text("SSR setting");

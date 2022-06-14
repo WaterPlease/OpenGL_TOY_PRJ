@@ -20,7 +20,7 @@ Sun::Sun(const glm::vec3& _lDir, GLuint _resolution, GLuint _scrX, GLuint _scrY)
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	color = glm::vec3(0.0);
+	color = glm::vec3(251.0f/255.0f, 137.0f/255.0f, 75.0f/255.0f);
 }
 void Sun::Begin() {
 	time = timeMng.getEffectiveTime() * 0.3;

@@ -7,5 +7,6 @@ GLuint gBuffer_Albedo;
 GLuint gBuffer_Normal;
 
 GLuint gl_SSBO_FLY;
+GLuint gl_SSBO_LightIndex;
 
 GLuint gl_texture_heightmap;

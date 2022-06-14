@@ -1,10 +1,22 @@
 #version 430 core
 
-#define FLYDENSITY 128
+#define FLYDENSITY 64
+#define MAX_LIGHTS_TILE 1024
+#define NUM_X_AXIS_TILE 24
+#define NUM_Y_AXIS_TILE 15
+#define NUM_Z_AXIS_TILE 16
 
 layout(std430, binding = 3) volatile buffer flyInfo {
 	float pos [FLYDENSITY*FLYDENSITY*5];
 }flyinfo;
+
+layout(std430, binding = 3) volatile buffer lightIndex
+{
+	uint indexLstSize;
+	uint indexLst[NUM_X_AXIS_TILE*NUM_Y_AXIS_TILE*NUM_Z_AXIS_TILE*MAX_LIGHTS_TILE];
+	uvec2 gridCell[NUM_X_AXIS_TILE*NUM_Y_AXIS_TILE*NUM_Z_AXIS_TILE];   // offset, size
+}
+lightindex;
 
 out vec4 FragColor;
 
@@ -24,8 +36,9 @@ uniform mat4 view;
 uniform mat4 lightSpaceMat;
 uniform float shadowBlurJitter;
 uniform float shadowBlurArea;
-uniform float landSize;
+uniform float zFar;
 uniform bool drawFireflies;
+uniform bool bClusterDraw;
 
 
 #define EPS 0.001
@@ -35,7 +48,7 @@ uniform bool drawFireflies;
 #define SHADOW_SAMPLE_INV (1.0/SHADOW_SAMPLE)
 #define SHADOW_SAMPLE_SQRT 8
 
-#define NUM_POINT_LIGHT FLYDENSITY*FLYDENSITY
+#define NUM_POINT_LIGHT (FLYDENSITY*FLYDENSITY)
 
 
 
@@ -202,6 +215,12 @@ vec3 pbr_sun_point(float dist,vec3 lightColor,vec3 L,vec3 N, vec3 V, vec3 albedo
 }
 
 
+// TILED RENDERING
+uint getTileID(vec3 viewPos){
+    //return uint(gl_FragCoord.y)/36*48 + uint(gl_FragCoord.x)/40;
+    return uint(floor(-(viewPos.z) / zFar * NUM_Z_AXIS_TILE)) * NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE + uint(floor(gl_FragCoord.y/1080.0*NUM_Y_AXIS_TILE)) * NUM_X_AXIS_TILE + uint(floor(gl_FragCoord.x/1920.0*NUM_X_AXIS_TILE));
+}
+
 // MAIN
 void main(){
     seed = (gl_FragCoord.x/1980)*(gl_FragCoord.y/1080);
@@ -233,18 +252,35 @@ void main(){
     }else{
         Normal = normalize(Normal);
         lighting += pbr_sun_lighting(lightSpacePos,lightColor*sunStrength,normalize(sunDir),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
-
-        for(int i=0;i<NUM_POINT_LIGHT;i++){
-            vec3 lPos = vec3(flyinfo.pos[5*i+0],flyinfo.pos[5*i+1],flyinfo.pos[5*i+2]);
+        uvec2 gridCell = lightindex.gridCell[getTileID(FragPos)];
+        for(int i=0;i<gridCell.y;i++){
+            uint indexLstIdx = gridCell.x + i;
+            uint lightID = lightindex.indexLst[indexLstIdx];
+            vec3 lPos = vec3(flyinfo.pos[5*lightID+0],flyinfo.pos[5*lightID+1],flyinfo.pos[5*lightID+2]);
             float dist = distance(globalFragPos,lPos);
             if(dist<2.0){
                 vec3 viewLPos = (view * vec4(lPos,1.0)).xyz;
-                vec3 color = vec3(0.2);
-                color[uint(flyinfo.pos[5*i+4])] = 1.2;
-                lighting += pbr_sun_point(dist,color*flyinfo.pos[5*i+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
+                vec3 lcolor = vec3(0.2);
+                lcolor[uint(flyinfo.pos[5*lightID+4])] = 1.2;
+                lighting += pbr_sun_point(dist,lcolor*flyinfo.pos[5*lightID+3],normalize(viewLPos - FragPos),Normal,normalize(-FragPos),Albedo,metalic,roughness,AO);
             }
         }
     }
-    
-    FragColor = vec4(lighting, 1.0);
+    //uint maxLight = 0;
+    //int tID = int(getTileID(vec3(0.0)))-NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE;
+    //for(uint i=0; i<16;i++){
+    //    tID += NUM_X_AXIS_TILE * NUM_Y_AXIS_TILE;
+    //    maxLight = max(maxLight,lightindex.gridCell[tID].y);
+    //}
+    if(bClusterDraw){
+        FragColor = vec4(
+                        //min(1.0,float(maxLight)/1000.0)*vec3(1.0,1.0,1.0),
+                        min(1.0,float(lightindex.gridCell[getTileID(FragPos)].y)/2048.0)*vec3(1.0),
+                        1.0);
+    }else{
+        FragColor = vec4(
+                        lighting,
+                        //+min(1.0,float(lightindex.gridCell[getTileID(FragPos)].y)/10.0)*vec3(1.0,0.0,0.0),
+                        1.0);
+    }
 }
