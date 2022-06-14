@@ -7,7 +7,7 @@ int SCREEN_HEIGHT = 1080;
 
 int TESS_GROUND_LEVEL = 8;
 int TESS_WATER_LEVEL = 64;
-int INSTANCE_GRASS_LEVEL = 256;
+int INSTANCE_GRASS_LEVEL = 512;
 float GAMMA = 1.6f;
 bool bPrameterChange = true;
 bool bWireMode = false;

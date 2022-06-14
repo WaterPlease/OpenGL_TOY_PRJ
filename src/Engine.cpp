@@ -172,7 +172,7 @@ void Engine::Loop() {
                 ImGui::Text("Bench Time : %.2f sec", benchTime);
                 ImGui::Text("Total Frame : %d", totalFrame);
                 ImGui::Text("Mean FPS : %.3f fps/sec", (float)totalFrame/benchTime);
-                ImGui::Text("Total Render Time : %.2f ms", totalRenderTime/(float)totalFrame);
+                ImGui::Text("Total Shading Time : %.2f ms", totalRenderTime/(float)totalFrame);
                 ImGui::End();
             }
         }
