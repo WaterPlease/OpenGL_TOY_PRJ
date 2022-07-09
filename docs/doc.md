@@ -2,15 +2,19 @@
 
 ![main](./Imgs/mainImg.webp)
 
-그래픽스 강의를 수강한 이후 관련 분야에 흥미가 생겨 더 공부해볼 목적으로 진행한 토이 프로젝트입니다. 흥미로운 기술들을 발견하면 공부하고 그것을 해당 프로젝트에 적용 시켜왔습니다.
+  OpenGL과 여러 실시간 렌더링 기술들을 배우고 적용해보기 위한 프로젝트입니다. OpenGL 4.6(glfw)을 활용해 C++로 작성하였습니다.deferred rendering, SSR, shadow mapping, tessellation, normal mapping 등 다양한 렌더링 기술들을 학습할 수 있는 기회가 되었습니다. 
 
 
 
-이후에도 지속적으로 공부하면서 다양한 기능을 추가할 예정입니다.
+  최적화를 위해 cluster shading, viewcone을 이용한 culling, LOD 를 학습하고 적용했습니다. 특히 cluster shading을 적용해 65,536 개의 동적 광원의 lighting을 약 56ms 만에 달성할 수 있었습니다.
 
 
 
-Keyword : clustered deferred rendering, SSR, Shadow map, PCF, Bloom effect, PBR, Normal mapping, tessellation
+**Keyword** : clustered deferred rendering, SSR, Shadow map, PCF, Bloom effect, Normal mapping, tessellation
+
+
+
+**Demo** : https://www.youtube.com/watch?v=rZhjAB3UKO8
 
 #### 주요 기능
 
@@ -28,9 +32,7 @@ Keyword : clustered deferred rendering, SSR, Shadow map, PCF, Bloom effect, PBR,
 
 <img src="./Imgs/cluster_render.png" alt="Base Profile Screenshot 2022.06.14 - 15.32.56.62" style="width:50%;" /><img src="./Imgs/cluster_heatmap.png" alt="Base Profile Screenshot 2022.06.14 - 15.33.06.26" style="width:50%;" />
 
-
-
-성능 : light culling & lighting in 4.13ms
+​											[성능 : light culling & lighting in 4.13ms]
 
 - Screen space reflection
 
@@ -70,7 +72,10 @@ Keyword : clustered deferred rendering, SSR, Shadow map, PCF, Bloom effect, PBR,
 
 <img src="./Imgs/culling.png" alt="culling" style="zoom: 33%;" />
 
-#### 의미
+#### 어려웠던 점
+
+- Viewcone으로 culling을 수행할 때, tessellation을 사용하는 지형의 경우 렌더링하기 전까지 실제 위치를 알 수 없어 일부분이 렌더링 되지 않는 문제가 있었습니다. 이를 해결하기 위해 지형에 한해서 y축을 무시하고 xz 평면에서 수평 시야각을 기준으로 culling을 수행하여 해결할 수 있었습니다.
+- Shadow mapping을 통해 부드러운 그림자를 구현하려 했지만 단순한 PCF로는 여러 강도의 그림자가 층을 이루는 어색한 결과 나오는 문제와 많은 성능을 요구하던 문제가 있었습니다. 이를 해결하기 위해 [Gpu Gems2](https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-17-efficient-soft-edged-shadows-using)을 참고해 불필요한 연산을 줄여 성능을 증가 시키고 jittering을 통해 자연스러운 그림자가 렌더링 되도록 할 수 있었습니다.
 
 #### TODO
 

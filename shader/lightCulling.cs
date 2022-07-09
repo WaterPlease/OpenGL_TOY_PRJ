@@ -1,6 +1,6 @@
 # version 430 core
 
-#define FLYDENSITY 64
+#define FLYDENSITY 128
 #define MAX_LIGHTS_TILE 1024
 #define NUM_X_AXIS_TILE 24
 #define NUM_Y_AXIS_TILE 15

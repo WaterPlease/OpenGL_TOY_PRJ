@@ -3,7 +3,7 @@
 #define M_PI 3.1415926535897932384626433832795
 #define EPS 0.001
 
-#define DENSITY 64
+#define DENSITY 128
 
 layout(local_size_x = 1, local_size_y=1, local_size_z=1) in;
 layout(std430, binding = 3) volatile buffer flyInfo {
