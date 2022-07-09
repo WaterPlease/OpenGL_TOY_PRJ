@@ -14,7 +14,7 @@
 
 
 
-**Demo** : https://www.youtube.com/watch?v=rZhjAB3UKO8
+**Demo Video** : https://www.youtube.com/watch?v=rZhjAB3UKO8
 
 #### 주요 기능
 
